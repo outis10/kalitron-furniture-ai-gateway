@@ -19,7 +19,6 @@ _POLL_INTERVAL = 2  # seconds between history checks
 async def generate_kitchen_concept(
     session_id: str,
     positive_prompt: str,
-    style: str = "modern",
     client_image_b64: str | None = None,
 ) -> dict:
     """Orchestrate image generation and return a dict with image_url, prompt_used, pipeline."""
@@ -29,7 +28,7 @@ async def generate_kitchen_concept(
         image_url, prompt_used = await _run_img2img(client_image_b64, positive_prompt)
         pipeline = "img2img"
     else:
-        image_url, prompt_used = await _run_txt2img(positive_prompt, style)
+        image_url, prompt_used = await _run_txt2img(positive_prompt)
         pipeline = "txt2img"
 
     elapsed = time.monotonic() - start
@@ -49,8 +48,8 @@ async def _run_img2img(image_b64: str, positive_prompt: str) -> tuple[str, str]:
     return url, workflow["6"]["inputs"]["text"]
 
 
-async def _run_txt2img(positive_prompt: str, style: str) -> tuple[str, str]:
-    workflow = workflows.get_txt2img_workflow(positive_prompt, style)
+async def _run_txt2img(positive_prompt: str) -> tuple[str, str]:
+    workflow = workflows.get_txt2img_workflow(positive_prompt)
     prompt_id = await _queue_comfyui_prompt(workflow)
     image_data = await _wait_for_result(prompt_id, output_node="11")
     url = await save_image(image_data)

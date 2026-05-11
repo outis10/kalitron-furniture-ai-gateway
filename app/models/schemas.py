@@ -26,7 +26,9 @@ class ChatResponse(BaseModel):
 class GenerateRequest(BaseModel):
     session_id: str
     client_image_b64: Optional[str] = None  # if provided → img2img pipeline
-    style: str = "modern"
+    style: str = "moderno"  # moderno | rustico | minimalista | clasico | industrial
+    layout: Optional[str] = None  # island | l-shaped | u-shaped | galley
+    finish: Optional[str] = None  # white matte | oak wood | gray matte | black matte
 
 
 class GenerateResponse(BaseModel):

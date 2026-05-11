@@ -27,11 +27,15 @@ async def comfyui_health() -> HealthResponse:
 async def generate_image(payload: GenerateRequest) -> GenerateResponse:
     """Generate a kitchen concept image using SDXL via ComfyUI."""
     try:
-        positive_prompt, _ = await llm_service.build_image_prompt(payload.session_id)
+        positive_prompt, _ = await llm_service.build_image_prompt(
+            session_id=payload.session_id,
+            style=payload.style,
+            layout=payload.layout,
+            finish=payload.finish,
+        )
         result = await image_service.generate_kitchen_concept(
             session_id=payload.session_id,
             positive_prompt=positive_prompt,
-            style=payload.style,
             client_image_b64=payload.client_image_b64,
         )
         return GenerateResponse(session_id=payload.session_id, **result)
