@@ -1,14 +1,19 @@
 """Main image generation orchestrator: routes img2img vs txt2img via ComfyUI."""
 import asyncio
 import base64
+import logging
+import time
 import uuid
-from copy import deepcopy
 
 import httpx
 
 from app.core.config import settings
 from app.services import workflows
 from app.services.storage import save_image
+
+logger = logging.getLogger(__name__)
+
+_POLL_INTERVAL = 2  # seconds between history checks
 
 
 async def generate_kitchen_concept(
@@ -18,6 +23,8 @@ async def generate_kitchen_concept(
     client_image_b64: str | None = None,
 ) -> dict:
     """Orchestrate image generation and return a dict with image_url, prompt_used, pipeline."""
+    start = time.monotonic()
+
     if client_image_b64:
         image_url, prompt_used = await _run_img2img(client_image_b64, positive_prompt)
         pipeline = "img2img"
@@ -25,27 +32,34 @@ async def generate_kitchen_concept(
         image_url, prompt_used = await _run_txt2img(positive_prompt, style)
         pipeline = "txt2img"
 
+    elapsed = time.monotonic() - start
+    logger.info("session=%s pipeline=%s elapsed=%.2fs url=%s", session_id, pipeline, elapsed, image_url)
+
     return {"image_url": image_url, "prompt_used": prompt_used, "pipeline": pipeline}
 
 
 async def _run_img2img(image_b64: str, positive_prompt: str) -> tuple[str, str]:
     image_bytes = base64.b64decode(image_b64)
-    filename = await _upload_image_to_comfyui(image_bytes)
-    workflow = workflows.get_img2img_workflow(positive_prompt, filename)
-    image_data = await _run_workflow(workflow, output_node="17")
+    filename = f"{uuid.uuid4().hex}.png"
+    uploaded_name = await _upload_image_to_comfyui(image_bytes, filename)
+    workflow = workflows.get_img2img_workflow(positive_prompt, uploaded_name)
+    prompt_id = await _queue_comfyui_prompt(workflow)
+    image_data = await _wait_for_result(prompt_id, output_node="17")
     url = await save_image(image_data)
     return url, workflow["6"]["inputs"]["text"]
 
 
 async def _run_txt2img(positive_prompt: str, style: str) -> tuple[str, str]:
     workflow = workflows.get_txt2img_workflow(positive_prompt, style)
-    image_data = await _run_workflow(workflow, output_node="11")
+    prompt_id = await _queue_comfyui_prompt(workflow)
+    image_data = await _wait_for_result(prompt_id, output_node="11")
     url = await save_image(image_data)
     return url, workflow["6"]["inputs"]["text"]
 
 
-async def _upload_image_to_comfyui(image_bytes: bytes) -> str:
-    filename = f"{uuid.uuid4().hex}.png"
+async def _upload_image_to_comfyui(image_bytes: bytes, filename: str | None = None) -> str:
+    """Upload a reference image to ComfyUI and return the stored filename."""
+    filename = filename or f"{uuid.uuid4().hex}.png"
     async with httpx.AsyncClient(timeout=30) as client:
         response = await client.post(
             f"{settings.COMFYUI_URL}/upload/image",
@@ -53,42 +67,51 @@ async def _upload_image_to_comfyui(image_bytes: bytes) -> str:
             data={"type": "input", "overwrite": "true"},
         )
         response.raise_for_status()
-        return response.json()["name"]
+        name = response.json()["name"]
+    logger.debug("Uploaded reference image to ComfyUI as %s", name)
+    return name
 
 
-async def _run_workflow(workflow: dict, output_node: str) -> bytes:
+async def _queue_comfyui_prompt(workflow: dict) -> str:
+    """Submit a workflow to ComfyUI and return the prompt_id."""
     client_id = uuid.uuid4().hex
-
-    async with httpx.AsyncClient(timeout=60) as client:
+    async with httpx.AsyncClient(timeout=30) as client:
         resp = await client.post(
             f"{settings.COMFYUI_URL}/prompt",
             json={"prompt": workflow, "client_id": client_id},
         )
         resp.raise_for_status()
-        prompt_id = resp.json()["prompt_id"]
+        prompt_id: str = resp.json()["prompt_id"]
+    logger.debug("Queued ComfyUI prompt — id=%s", prompt_id)
+    return prompt_id
 
-    image_data = await _poll_for_result(prompt_id, output_node)
-    return image_data
 
-
-async def _poll_for_result(prompt_id: str, output_node: str, timeout: int = 300) -> bytes:
-    deadline = asyncio.get_event_loop().time() + timeout
+async def _wait_for_result(prompt_id: str, output_node: str, timeout: int = 180) -> bytes:
+    """Poll GET /history/{prompt_id} every 2s until images are ready, then fetch bytes from GET /view."""
+    loop = asyncio.get_running_loop()
+    deadline = loop.time() + timeout
 
     async with httpx.AsyncClient(timeout=10) as client:
-        while asyncio.get_event_loop().time() < deadline:
+        while loop.time() < deadline:
             resp = await client.get(f"{settings.COMFYUI_URL}/history/{prompt_id}")
             resp.raise_for_status()
             history = resp.json()
 
-            if prompt_id in history and history[prompt_id].get("outputs", {}).get(output_node):
-                image_meta = history[prompt_id]["outputs"][output_node]["images"][0]
+            outputs = history.get(prompt_id, {}).get("outputs", {})
+            if outputs.get(output_node):
+                image_meta = outputs[output_node]["images"][0]
                 img_resp = await client.get(
                     f"{settings.COMFYUI_URL}/view",
-                    params={"filename": image_meta["filename"], "subfolder": image_meta.get("subfolder", ""), "type": "output"},
+                    params={
+                        "filename": image_meta["filename"],
+                        "subfolder": image_meta.get("subfolder", ""),
+                        "type": "output",
+                    },
                 )
                 img_resp.raise_for_status()
+                logger.debug("Retrieved image from ComfyUI — prompt_id=%s filename=%s", prompt_id, image_meta["filename"])
                 return img_resp.content
 
-            await asyncio.sleep(2)
+            await asyncio.sleep(_POLL_INTERVAL)
 
     raise TimeoutError(f"ComfyUI did not complete prompt {prompt_id} within {timeout}s")
