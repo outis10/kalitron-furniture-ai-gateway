@@ -25,10 +25,10 @@ async def generate_kitchen_concept(
     start = time.monotonic()
 
     if client_image_b64:
-        image_url, prompt_used = await _run_img2img(client_image_b64, positive_prompt)
+        image_url, prompt_used = await _run_img2img(client_image_b64, positive_prompt, session_id)
         pipeline = "img2img"
     else:
-        image_url, prompt_used = await _run_txt2img(positive_prompt)
+        image_url, prompt_used = await _run_txt2img(positive_prompt, session_id)
         pipeline = "txt2img"
 
     elapsed = time.monotonic() - start
@@ -37,22 +37,22 @@ async def generate_kitchen_concept(
     return {"image_url": image_url, "prompt_used": prompt_used, "pipeline": pipeline}
 
 
-async def _run_img2img(image_b64: str, positive_prompt: str) -> tuple[str, str]:
+async def _run_img2img(image_b64: str, positive_prompt: str, session_id: str) -> tuple[str, str]:
     image_bytes = base64.b64decode(image_b64)
     filename = f"{uuid.uuid4().hex}.png"
     uploaded_name = await _upload_image_to_comfyui(image_bytes, filename)
     workflow = workflows.get_img2img_workflow(positive_prompt, uploaded_name)
     prompt_id = await _queue_comfyui_prompt(workflow)
     image_data = await _wait_for_result(prompt_id, output_node="17")
-    url = await save_image(image_data)
+    url = await save_image(image_data, session_id=session_id, image_type="img2img")
     return url, workflow["6"]["inputs"]["text"]
 
 
-async def _run_txt2img(positive_prompt: str) -> tuple[str, str]:
+async def _run_txt2img(positive_prompt: str, session_id: str) -> tuple[str, str]:
     workflow = workflows.get_txt2img_workflow(positive_prompt)
     prompt_id = await _queue_comfyui_prompt(workflow)
     image_data = await _wait_for_result(prompt_id, output_node="11")
-    url = await save_image(image_data)
+    url = await save_image(image_data, session_id=session_id, image_type="txt2img")
     return url, workflow["6"]["inputs"]["text"]
 
 
