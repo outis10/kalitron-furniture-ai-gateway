@@ -1,0 +1,40 @@
+# Secrets — never bake into image
+.env
+.env.*
+*.env
+
+# Generated outputs — mount as volume at runtime
+outputs/
+
+# Python bytecode
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Version control
+.git/
+.gitignore
+
+# Dev / test artifacts
+tests/
+docs/
+.pytest_cache/
+.coverage
+.mypy_cache/
+.ruff_cache/
+
+# Build artifacts
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
