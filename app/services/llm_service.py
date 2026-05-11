@@ -1,4 +1,6 @@
 """GPT-4o multi-turn chat service with SPECS_READY signal detection and prompt building."""
+import json
+
 from openai import AsyncOpenAI
 
 from app.core.config import settings
@@ -183,3 +185,126 @@ async def _extract_design_details(history: list[dict]) -> str:
         max_tokens=80,
     )
     return (response.choices[0].message.content or "").strip()
+
+
+# ── Spec extraction ───────────────────────────────────────────────────────────
+
+_EXTRACTION_SYSTEM_PROMPT = """\
+You are a kitchen spec extractor. Analyze the conversation and return a single JSON object.
+
+Cabinet ID convention:
+  U-## = upper/aéreo  |  L-## = lower/bajo  |  C-## = corner/esquinero
+  T-## = tall/torre/alacena  |  S-## = sink/fregadero
+
+Mexican market defaults (apply when not explicitly mentioned):
+  - Upper cabinet:  height_mm=720,  depth_mm=350
+  - Lower cabinet:  height_mm=870,  depth_mm=600
+  - Corner cabinet: height_mm=870,  depth_mm=600
+  - Tall cabinet:   height_mm=2100, depth_mm=600
+  - Sink cabinet:   height_mm=870,  depth_mm=600
+  - Default material: "MDF 18mm"
+  - Default finish:   "blanco mate"
+  - Default kitchen_type: "L"
+  - Default total_height_mm: 2400
+  - Default total_depth_mm:  600
+
+Return ONLY this JSON (no explanation):
+{
+  "kitchen_type": "L|U|lineal|isla",
+  "total_width_mm": <int>,
+  "total_height_mm": <int>,
+  "total_depth_mm": <int>,
+  "style": <string>,
+  "confidence": <float 0.0-1.0>,
+  "cabinets": [
+    {
+      "id": "U-01",
+      "category": "upper|lower|corner|tall|sink",
+      "label": <string in Spanish>,
+      "width_mm": <int>,
+      "height_mm": <int>,
+      "depth_mm": <int>,
+      "doors": <int>,
+      "drawers": <int>,
+      "material": <string>,
+      "finish": <string>
+    }
+  ]
+}
+"""
+
+# Defaults per category (mm) — Mexican market standard
+_CATEGORY_DEFAULTS: dict[str, dict] = {
+    "upper":  {"height_mm": 720,  "depth_mm": 350},
+    "lower":  {"height_mm": 870,  "depth_mm": 600},
+    "corner": {"height_mm": 870,  "depth_mm": 600},
+    "tall":   {"height_mm": 2100, "depth_mm": 600},
+    "sink":   {"height_mm": 870,  "depth_mm": 600},
+}
+
+
+def _apply_mexican_defaults(raw: dict) -> dict:
+    """Fill missing values with Mexican market defaults in-place and return the dict."""
+    raw.setdefault("kitchen_type", "L")
+    raw.setdefault("total_height_mm", 2400)
+    raw.setdefault("total_depth_mm", 600)
+    raw.setdefault("total_width_mm", 0)
+    raw.setdefault("style", "moderno")
+    raw.setdefault("cabinets", [])
+
+    counters: dict[str, int] = {}
+    for cab in raw["cabinets"]:
+        category = cab.get("category", "lower")
+        defaults = _CATEGORY_DEFAULTS.get(category, _CATEGORY_DEFAULTS["lower"])
+
+        cab.setdefault("height_mm", defaults["height_mm"])
+        cab.setdefault("depth_mm", defaults["depth_mm"])
+        cab.setdefault("material", "MDF 18mm")
+        cab.setdefault("finish", "blanco mate")
+        cab.setdefault("doors", 0)
+        cab.setdefault("drawers", 0)
+        cab.setdefault("label", category.capitalize())
+
+        # Auto-assign ID if missing or malformed
+        prefix = {"upper": "U", "lower": "L", "corner": "C", "tall": "T", "sink": "S"}.get(category, "L")
+        if not cab.get("id", "").startswith(prefix):
+            counters[prefix] = counters.get(prefix, 0) + 1
+            cab["id"] = f"{prefix}-{counters[prefix]:02d}"
+
+    return raw
+
+
+async def extract_specs(session_id: str) -> dict:
+    """Extract structured kitchen specs from the session's conversation history.
+
+    Returns a dict with keys 'specs' (ExtractedKitchenSpecs-compatible) and 'confidence'.
+    Uses temperature=0.1 for deterministic extraction.
+    """
+    history = get_session(session_id)
+    conversation = [m for m in history if m.get("role") in ("user", "assistant")]
+    if not conversation:
+        return {
+            "specs": _apply_mexican_defaults({}),
+            "confidence": 0.0,
+        }
+
+    messages = [
+        {"role": "system", "content": _EXTRACTION_SYSTEM_PROMPT},
+        *[m for m in history if m.get("role") in ("user", "assistant")],
+        {"role": "user", "content": "Extract the kitchen specifications from the conversation above."},
+    ]
+
+    client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+    response = await client.chat.completions.create(
+        model=settings.OPENAI_MODEL,
+        messages=messages,
+        temperature=0.1,
+        max_tokens=1500,
+        response_format={"type": "json_object"},
+    )
+
+    raw = json.loads(response.choices[0].message.content or "{}")
+    confidence = float(raw.pop("confidence", 0.7))
+    specs = _apply_mexican_defaults(raw)
+
+    return {"specs": specs, "confidence": confidence}
