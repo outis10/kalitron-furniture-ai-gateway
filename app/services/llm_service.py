@@ -1,0 +1,185 @@
+"""GPT-4o multi-turn chat service with SPECS_READY signal detection and prompt building."""
+from openai import AsyncOpenAI
+
+from app.core.config import settings
+from app.services.workflows import (
+    FINISH_DETAILS,
+    LAYOUT_DETAILS,
+    NEGATIVE_PROMPT,
+    PROMPT_SUFFIX,
+    STYLE_MAP,
+    STYLE_PROMPTS,
+)
+
+_SPECS_READY_SIGNAL = "SPECS_READY"
+
+_sessions: dict[str, list[dict]] = {}
+
+_SYSTEM_PROMPT = """\
+Eres un diseñador de interiores experto de Kalitron Furniture Studio, especializado en \
+cocinas, armarios y mobiliario a medida. Tu objetivo es guiar al cliente para definir \
+sus especificaciones de diseño de forma conversacional, amable y eficiente.
+
+REGLAS OBLIGATORIAS:
+1. Responde SIEMPRE en español.
+2. Haz MÁXIMO 2 preguntas por turno. Nunca bombardees al cliente con más.
+3. Sigue el flujo de 7 pasos en orden, adaptando el tono al cliente.
+4. Cuando el cliente confirme el resumen estructurado, escribe el token SPECS_READY \
+en una línea sola al final de tu respuesta.
+
+FLUJO DE CONVERSACIÓN:
+Paso 1 – Bienvenida: Saluda y pregunta el tipo de proyecto (cocina / armario / ambos).
+Paso 2 – Estilo: Explora preferencias de estilo (moderno, rústico, minimalista, clásico, industrial).
+Paso 3 – Espacio: Solicita dimensiones (ancho × fondo × alto en cm) y distribución \
+(en L, en U, galería, isla o lineal).
+Paso 4 – Módulos: Pregunta qué módulos necesita (cajones, puertas, estantes abiertos, alacenas, \
+cajoneras).
+Paso 5 – Materiales y acabados: Consulta materiales (MDF lacado, madera maciza, melamina, \
+tablero enchapado) y color o acabado deseado.
+Paso 6 – Resumen: Presenta un resumen estructurado con TODOS los datos recabados usando \
+este formato exacto:
+  • Tipo de proyecto: ...
+  • Estilo: ...
+  • Dimensiones: ... cm × ... cm × ... cm
+  • Distribución: ...
+  • Módulos: ...
+  • Material: ...
+  • Acabado/Color: ...
+  • Notas adicionales: ...
+Paso 7 – Confirmación: Pregunta si el resumen es correcto. Cuando el cliente confirme, \
+escribe SPECS_READY en una línea sola.
+
+TONO: Profesional, cálido y conciso. Evita tecnicismos innecesarios.\
+"""
+
+
+# ── Session management ────────────────────────────────────────────────────────
+
+def get_session(session_id: str) -> list[dict]:
+    """Return the message history for *session_id*, creating it if it doesn't exist."""
+    if session_id not in _sessions:
+        _sessions[session_id] = [{"role": "system", "content": _SYSTEM_PROMPT}]
+    return _sessions[session_id]
+
+
+def clear_session(session_id: str) -> None:
+    """Delete all history for *session_id*. No-op if the session doesn't exist."""
+    _sessions.pop(session_id, None)
+
+
+def session_turn_count(session_id: str) -> int:
+    """Return the number of user turns in the session (excludes system message)."""
+    history = _sessions.get(session_id, [])
+    return sum(1 for m in history if m["role"] == "user")
+
+
+# ── Chat ──────────────────────────────────────────────────────────────────────
+
+async def chat(session_id: str, user_message: str, image_b64: str | None = None) -> tuple[str, bool]:
+    """Send *user_message* and return (reply, specs_ready).
+
+    If *image_b64* is provided it is sent as a vision content array alongside
+    the text so GPT-4o can analyse the reference photo.
+    """
+    history = get_session(session_id)
+
+    if image_b64:
+        content: list | str = [
+            {"type": "text", "text": user_message},
+            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_b64}"}},
+        ]
+    else:
+        content = user_message
+
+    history.append({"role": "user", "content": content})
+
+    client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+    response = await client.chat.completions.create(
+        model=settings.OPENAI_MODEL,
+        messages=history,
+        max_tokens=1024,
+        temperature=0.7,
+    )
+
+    reply = response.choices[0].message.content or ""
+    history.append({"role": "assistant", "content": reply})
+
+    specs_ready = _SPECS_READY_SIGNAL in reply
+    clean_reply = reply.replace(_SPECS_READY_SIGNAL, "").strip()
+    return clean_reply, specs_ready
+
+
+# ── Prompt building ───────────────────────────────────────────────────────────
+
+async def build_prompt_from_chat(
+    history: list[dict],
+    style: str = "moderno",
+    layout: str | None = None,
+    finish: str | None = None,
+) -> dict:
+    """Build a complete SD prompt from conversation history + explicit style/layout/finish.
+
+    Returns {"positive": str, "negative": str, "style_key": str}.
+    The positive prompt is always in English, starts with 'kitchen interior design,'
+    and ends with quality tags.
+    """
+    style_key = STYLE_MAP.get(style.lower(), "modern")
+    base = STYLE_PROMPTS[style_key]
+
+    extra: list[str] = []
+
+    if layout:
+        detail = LAYOUT_DETAILS.get(layout.lower())
+        if detail:
+            extra.append(detail)
+
+    if finish:
+        detail = FINISH_DETAILS.get(finish.lower())
+        if detail:
+            extra.append(detail)
+
+    conversation = [m for m in history if m.get("role") in ("user", "assistant")]
+    if conversation:
+        extracted = await _extract_design_details(history)
+        if extracted:
+            extra.append(extracted)
+
+    positive = f"{base}, {', '.join(extra)}, {PROMPT_SUFFIX}" if extra else f"{base}, {PROMPT_SUFFIX}"
+    return {"positive": positive, "negative": NEGATIVE_PROMPT, "style_key": style_key}
+
+
+async def build_image_prompt(
+    session_id: str,
+    style: str = "moderno",
+    layout: str | None = None,
+    finish: str | None = None,
+) -> tuple[str, str]:
+    """Convenience wrapper: build SD prompt from the session's chat history."""
+    history = get_session(session_id)
+    result = await build_prompt_from_chat(history, style, layout, finish)
+    return result["positive"], result["negative"]
+
+
+async def _extract_design_details(history: list[dict]) -> str:
+    """Ask GPT-4o to extract conversation-specific design details not covered by style templates."""
+    messages = list(history) + [
+        {
+            "role": "user",
+            "content": (
+                "From the kitchen design conversation above, extract ONLY specific details "
+                "not already implied by the general style (e.g., a particular color, unusual material, "
+                "special feature, or custom element). "
+                "Return a short English phrase suitable for a Stable Diffusion prompt. "
+                "If there are no additional relevant details, return an empty string. "
+                "No explanation — only the phrase or empty string."
+            ),
+        }
+    ]
+
+    client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+    response = await client.chat.completions.create(
+        model=settings.OPENAI_MODEL,
+        messages=messages,
+        max_tokens=80,
+    )
+    return (response.choices[0].message.content or "").strip()
