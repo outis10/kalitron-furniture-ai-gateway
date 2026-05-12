@@ -257,7 +257,8 @@ Copy `.env.example` to `.env` and fill in your values.
 |----------|----------|-------------|
 | `OPENAI_API_KEY` | ✅ | GPT-4o API key |
 | `OPENAI_MODEL` | — | Default: `gpt-4o` |
-| `COMFYUI_URL` | — | Default: `http://localhost:8188` |
+| `COMFYUI_URL` | — | Default: `http://localhost:8188`. Set to `https://api.comfy.org` for Comfy.org Cloud |
+| `COMFYUI_API_KEY` | Cloud only | Comfy.org Cloud API key. Leave empty for local ComfyUI |
 | `R2_ENDPOINT_URL` | Production | `https://<account>.r2.cloudflarestorage.com` |
 | `R2_ACCESS_KEY_ID` | Production | Cloudflare R2 key ID |
 | `R2_SECRET_ACCESS_KEY` | Production | Cloudflare R2 secret |
