@@ -16,6 +16,56 @@ logger = logging.getLogger(__name__)
 _POLL_INTERVAL = 2  # seconds between history checks
 
 
+def _comfyui_headers() -> dict[str, str]:
+    """Return auth headers for Comfy.org Cloud; empty dict for local ComfyUI."""
+    if settings.comfyui_cloud_mode:
+        return {"X-API-Key": settings.COMFYUI_API_KEY}
+    return {}
+
+
+def _prompt_url() -> str:
+    """POST endpoint to submit a workflow."""
+    if settings.comfyui_cloud_mode:
+        return f"{settings.COMFYUI_URL}/api/prompt"
+    return f"{settings.COMFYUI_URL}/prompt"
+
+
+def _history_url(prompt_id: str) -> str:
+    """GET endpoint to poll job status."""
+    if settings.comfyui_cloud_mode:
+        return f"{settings.COMFYUI_URL}/api/job/{prompt_id}/status"
+    return f"{settings.COMFYUI_URL}/history/{prompt_id}"
+
+
+def _view_url() -> str:
+    """GET endpoint to download output image bytes."""
+    if settings.comfyui_cloud_mode:
+        return f"{settings.COMFYUI_URL}/api/view"
+    return f"{settings.COMFYUI_URL}/view"
+
+
+def _upload_url() -> str:
+    """POST endpoint to upload a reference image."""
+    if settings.comfyui_cloud_mode:
+        return f"{settings.COMFYUI_URL}/api/upload/image"
+    return f"{settings.COMFYUI_URL}/upload/image"
+
+
+def _is_job_done(prompt_id: str, payload: dict) -> tuple[bool, dict]:
+    """Parse the poll response for both local and cloud formats.
+
+    Local: { "<prompt_id>": { "outputs": { "<node>": { "images": [...] } } } }
+    Cloud: { "status": "completed", "outputs": { "<node>": { "images": [...] } } }
+    Returns (done, outputs_dict).
+    """
+    if settings.comfyui_cloud_mode:
+        if payload.get("status") == "completed":
+            return True, payload.get("outputs", {})
+        return False, {}
+    outputs = payload.get(prompt_id, {}).get("outputs", {})
+    return bool(outputs), outputs
+
+
 async def generate_kitchen_concept(
     session_id: str,
     positive_prompt: str,
@@ -59,9 +109,9 @@ async def _run_txt2img(positive_prompt: str, session_id: str) -> tuple[str, str]
 async def _upload_image_to_comfyui(image_bytes: bytes, filename: str | None = None) -> str:
     """Upload a reference image to ComfyUI and return the stored filename."""
     filename = filename or f"{uuid.uuid4().hex}.png"
-    async with httpx.AsyncClient(timeout=30) as client:
+    async with httpx.AsyncClient(timeout=30, headers=_comfyui_headers(), verify=settings.COMFYUI_VERIFY_SSL) as client:
         response = await client.post(
-            f"{settings.COMFYUI_URL}/upload/image",
+            _upload_url(),
             files={"image": (filename, image_bytes, "image/png")},
             data={"type": "input", "overwrite": "true"},
         )
@@ -74,33 +124,32 @@ async def _upload_image_to_comfyui(image_bytes: bytes, filename: str | None = No
 async def _queue_comfyui_prompt(workflow: dict) -> str:
     """Submit a workflow to ComfyUI and return the prompt_id."""
     client_id = uuid.uuid4().hex
-    async with httpx.AsyncClient(timeout=30) as client:
+    async with httpx.AsyncClient(timeout=30, headers=_comfyui_headers(), verify=settings.COMFYUI_VERIFY_SSL) as client:
         resp = await client.post(
-            f"{settings.COMFYUI_URL}/prompt",
+            _prompt_url(),
             json={"prompt": workflow, "client_id": client_id},
         )
         resp.raise_for_status()
         prompt_id: str = resp.json()["prompt_id"]
-    logger.debug("Queued ComfyUI prompt — id=%s", prompt_id)
+    logger.debug("Queued ComfyUI prompt — id=%s (mode=%s)", prompt_id, "cloud" if settings.comfyui_cloud_mode else "local")
     return prompt_id
 
 
 async def _wait_for_result(prompt_id: str, output_node: str, timeout: int = 180) -> bytes:
-    """Poll GET /history/{prompt_id} every 2s until images are ready, then fetch bytes from GET /view."""
+    """Poll the job status endpoint every 2s until images are ready, then fetch bytes."""
     loop = asyncio.get_running_loop()
     deadline = loop.time() + timeout
 
-    async with httpx.AsyncClient(timeout=10) as client:
+    async with httpx.AsyncClient(timeout=10, headers=_comfyui_headers(), verify=settings.COMFYUI_VERIFY_SSL) as client:
         while loop.time() < deadline:
-            resp = await client.get(f"{settings.COMFYUI_URL}/history/{prompt_id}")
+            resp = await client.get(_history_url(prompt_id))
             resp.raise_for_status()
-            history = resp.json()
 
-            outputs = history.get(prompt_id, {}).get("outputs", {})
-            if outputs.get(output_node):
+            done, outputs = _is_job_done(prompt_id, resp.json())
+            if done and outputs.get(output_node):
                 image_meta = outputs[output_node]["images"][0]
                 img_resp = await client.get(
-                    f"{settings.COMFYUI_URL}/view",
+                    _view_url(),
                     params={
                         "filename": image_meta["filename"],
                         "subfolder": image_meta.get("subfolder", ""),
@@ -108,7 +157,7 @@ async def _wait_for_result(prompt_id: str, output_node: str, timeout: int = 180)
                     },
                 )
                 img_resp.raise_for_status()
-                logger.debug("Retrieved image from ComfyUI — prompt_id=%s filename=%s", prompt_id, image_meta["filename"])
+                logger.debug("Retrieved image — prompt_id=%s filename=%s", prompt_id, image_meta["filename"])
                 return img_resp.content
 
             await asyncio.sleep(_POLL_INTERVAL)

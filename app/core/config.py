@@ -16,6 +16,8 @@ class Settings(BaseSettings):
 
     # ComfyUI
     COMFYUI_URL: str = "http://localhost:8188"
+    COMFYUI_API_KEY: str = ""  # set to enable Comfy.org Cloud mode
+    COMFYUI_VERIFY_SSL: bool = True  # set to false when corporate SSL inspection intercepts RunPod proxy
 
     # OpenAI
     OPENAI_API_KEY: str = ""
@@ -40,6 +42,11 @@ class Settings(BaseSettings):
     @property
     def r2_configured(self) -> bool:
         return bool(self.R2_ENDPOINT_URL and self.R2_ACCESS_KEY_ID and self.R2_SECRET_ACCESS_KEY)
+
+    @property
+    def comfyui_cloud_mode(self) -> bool:
+        """True when COMFYUI_API_KEY is set — routes to Comfy.org Cloud instead of local ComfyUI."""
+        return bool(self.COMFYUI_API_KEY)
 
 
 settings = Settings()
