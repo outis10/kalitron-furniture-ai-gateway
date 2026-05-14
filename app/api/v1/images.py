@@ -1,9 +1,12 @@
+import logging
+
 import httpx
 from fastapi import APIRouter, HTTPException, status
 from app.core.config import settings
 from app.models.schemas import GenerateRequest, GenerateResponse, HealthResponse
 from app.services import image_service, llm_service
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
