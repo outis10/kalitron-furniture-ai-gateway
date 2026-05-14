@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     # ComfyUI
     COMFYUI_URL: str = "http://localhost:8188"
     COMFYUI_API_KEY: str = ""  # set to enable Comfy.org Cloud mode
+    COMFYUI_VERIFY_SSL: bool = True  # set to false when corporate SSL inspection intercepts RunPod proxy
 
     # OpenAI
     OPENAI_API_KEY: str = ""
