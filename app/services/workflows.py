@@ -31,16 +31,28 @@ STYLE_MAP: dict[str, str] = {
 
 LAYOUT_DETAILS: dict[str, str] = {
     "l-shaped": "L-shaped kitchen layout with corner workspace and efficient storage",
+    "en l": "L-shaped kitchen layout with corner workspace and efficient storage",
     "u-shaped": "U-shaped kitchen with wraparound countertops and ample cabinet space",
+    "en u": "U-shaped kitchen with wraparound countertops and ample cabinet space",
     "galley": "galley kitchen with parallel countertops and streamlined workflow",
+    "lineal": "galley kitchen with parallel countertops and streamlined workflow",
     "island": "open kitchen with central island, extra prep space and breakfast seating",
+    "isla": "open kitchen with central island, extra prep space and breakfast seating",
 }
 
 FINISH_DETAILS: dict[str, str] = {
     "white matte": "white matte cabinet finish, clean bright surfaces, minimalist hardware",
+    "blanco mate": "white matte cabinet finish, clean bright surfaces, minimalist hardware",
+    "blanco opaco": "white matte cabinet finish, clean bright surfaces, minimalist hardware",
     "oak wood": "warm oak wood cabinet finish, natural grain texture, warm inviting tones",
+    "madera roble": "warm oak wood cabinet finish, natural grain texture, warm inviting tones",
+    "roble": "warm oak wood cabinet finish, natural grain texture, warm inviting tones",
     "gray matte": "gray matte cabinet finish, sophisticated neutral tone, modern hardware",
+    "gris mate": "gray matte cabinet finish, sophisticated neutral tone, modern hardware",
+    "gris opaco": "gray matte cabinet finish, sophisticated neutral tone, modern hardware",
     "black matte": "black matte cabinet finish, dramatic bold contrast, sleek statement",
+    "negro mate": "black matte cabinet finish, dramatic bold contrast, sleek statement",
+    "negro opaco": "black matte cabinet finish, dramatic bold contrast, sleek statement",
 }
 
 # ── ComfyUI Workflow JSON ────────────────────────────────────────────────────
