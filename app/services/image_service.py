@@ -4,6 +4,7 @@ import base64
 import logging
 import time
 import uuid
+from contextlib import asynccontextmanager
 
 import httpx
 
@@ -28,6 +29,27 @@ def _comfyui_params() -> dict[str, str]:
     if settings.COMFYUI_TOKEN:
         return {"token": settings.COMFYUI_TOKEN}
     return {}
+
+
+@asynccontextmanager
+async def _comfyui_client(timeout: int = 30):
+    """Authenticated httpx client for ComfyUI.
+
+    When COMFYUI_TOKEN is set (Vast.ai), makes a GET to /?token=... first to
+    establish the session cookie so subsequent POST requests are not redirected.
+    """
+    async with httpx.AsyncClient(
+        timeout=timeout,
+        headers=_comfyui_headers(),
+        verify=settings.COMFYUI_VERIFY_SSL,
+    ) as client:
+        if settings.COMFYUI_TOKEN:
+            await client.get(
+                f"{settings.COMFYUI_URL}/",
+                params=_comfyui_params(),
+                follow_redirects=True,
+            )
+        yield client
 
 
 def _prompt_url() -> str:
@@ -116,12 +138,11 @@ async def _run_txt2img(positive_prompt: str, session_id: str) -> tuple[str, str]
 async def _upload_image_to_comfyui(image_bytes: bytes, filename: str | None = None) -> str:
     """Upload a reference image to ComfyUI and return the stored filename."""
     filename = filename or f"{uuid.uuid4().hex}.png"
-    async with httpx.AsyncClient(timeout=30, headers=_comfyui_headers(), verify=settings.COMFYUI_VERIFY_SSL, follow_redirects=True) as client:
+    async with _comfyui_client(timeout=30) as client:
         response = await client.post(
             _upload_url(),
             files={"image": (filename, image_bytes, "image/png")},
             data={"type": "input", "overwrite": "true"},
-            params=_comfyui_params(),
         )
         response.raise_for_status()
         name = response.json()["name"]
@@ -132,14 +153,17 @@ async def _upload_image_to_comfyui(image_bytes: bytes, filename: str | None = No
 async def _queue_comfyui_prompt(workflow: dict) -> str:
     """Submit a workflow to ComfyUI and return the prompt_id."""
     client_id = uuid.uuid4().hex
-    async with httpx.AsyncClient(timeout=30, headers=_comfyui_headers(), verify=settings.COMFYUI_VERIFY_SSL, follow_redirects=True) as client:
+    async with _comfyui_client(timeout=30) as client:
         resp = await client.post(
             _prompt_url(),
             json={"prompt": workflow, "client_id": client_id},
-            params=_comfyui_params(),
         )
         resp.raise_for_status()
-        prompt_id: str = resp.json()["prompt_id"]
+        body = resp.json()
+        logger.info("ComfyUI prompt response: %s", body)
+        if "prompt_id" not in body:
+            raise RuntimeError(f"ComfyUI rejected workflow: {body}")
+        prompt_id: str = body["prompt_id"]
     logger.debug("Queued ComfyUI prompt — id=%s (mode=%s)", prompt_id, "cloud" if settings.comfyui_cloud_mode else "local")
     return prompt_id
 
@@ -149,9 +173,9 @@ async def _wait_for_result(prompt_id: str, output_node: str, timeout: int = 180)
     loop = asyncio.get_running_loop()
     deadline = loop.time() + timeout
 
-    async with httpx.AsyncClient(timeout=10, headers=_comfyui_headers(), verify=settings.COMFYUI_VERIFY_SSL, follow_redirects=True) as client:
+    async with _comfyui_client(timeout=10) as client:
         while loop.time() < deadline:
-            resp = await client.get(_history_url(prompt_id), params=_comfyui_params())
+            resp = await client.get(_history_url(prompt_id))
             resp.raise_for_status()
 
             done, outputs = _is_job_done(prompt_id, resp.json())
@@ -160,7 +184,6 @@ async def _wait_for_result(prompt_id: str, output_node: str, timeout: int = 180)
                 img_resp = await client.get(
                     _view_url(),
                     params={
-                        **_comfyui_params(),
                         "filename": image_meta["filename"],
                         "subfolder": image_meta.get("subfolder", ""),
                         "type": "output",
