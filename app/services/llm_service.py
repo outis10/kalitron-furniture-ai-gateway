@@ -6,11 +6,12 @@ from openai import AsyncOpenAI
 from app.core.config import settings
 from app.services.workflows import (
     FINISH_DETAILS,
+    CLOSET_LAYOUT_DETAILS,
     LAYOUT_DETAILS,
     NEGATIVE_PROMPT,
     PROMPT_SUFFIX,
+    PROJECT_STYLE_PROMPTS,
     STYLE_MAP,
-    STYLE_PROMPTS,
 )
 
 _SPECS_READY_SIGNAL = "SPECS_READY"
@@ -118,20 +119,22 @@ async def build_prompt_from_chat(
     style: str = "moderno",
     layout: str | None = None,
     finish: str | None = None,
+    project_type: str = "KITCHEN",
+    design_brief: str | None = None,
 ) -> dict:
     """Build a complete SD prompt from conversation history + explicit style/layout/finish.
 
     Returns {"positive": str, "negative": str, "style_key": str}.
-    The positive prompt is always in English, starts with 'kitchen interior design,'
-    and ends with quality tags.
+    The positive prompt is always in English and ends with quality tags.
     """
     style_key = STYLE_MAP.get(style.lower(), "modern")
-    base = STYLE_PROMPTS[style_key]
+    project_key = normalize_project_type(project_type)
+    base = PROJECT_STYLE_PROMPTS[project_key][style_key]
 
     extra: list[str] = []
 
     if layout:
-        detail = LAYOUT_DETAILS.get(layout.lower())
+        detail = layout_details_for_project(project_key).get(layout.lower())
         if detail:
             extra.append(detail)
 
@@ -142,9 +145,12 @@ async def build_prompt_from_chat(
 
     conversation = [m for m in history if m.get("role") in ("user", "assistant")]
     if conversation:
-        extracted = await _extract_design_details(history)
+        extracted = await _extract_design_details(history, project_key)
         if extracted:
             extra.append(extracted)
+
+    if design_brief:
+        extra.append(await _translate_design_brief(design_brief, project_key))
 
     positive = f"{base}, {', '.join(extra)}, {PROMPT_SUFFIX}" if extra else f"{base}, {PROMPT_SUFFIX}"
     return {"positive": positive, "negative": NEGATIVE_PROMPT, "style_key": style_key}
@@ -155,20 +161,40 @@ async def build_image_prompt(
     style: str = "moderno",
     layout: str | None = None,
     finish: str | None = None,
+    project_type: str = "KITCHEN",
+    design_brief: str | None = None,
 ) -> tuple[str, str]:
     """Convenience wrapper: build SD prompt from the session's chat history."""
     history = get_session(session_id)
-    result = await build_prompt_from_chat(history, style, layout, finish)
+    result = await build_prompt_from_chat(history, style, layout, finish, project_type, design_brief)
     return result["positive"], result["negative"]
 
 
-async def _extract_design_details(history: list[dict]) -> str:
+def normalize_project_type(project_type: str | None) -> str:
+    if not project_type:
+        return "KITCHEN"
+    normalized = project_type.strip().upper()
+    if normalized in ("CLOSET", "ARMARIO", "WARDROBE"):
+        return "CLOSET"
+    if normalized in ("BOTH", "AMBOS"):
+        return "BOTH"
+    return "KITCHEN"
+
+
+def layout_details_for_project(project_key: str) -> dict[str, str]:
+    if project_key == "CLOSET":
+        return CLOSET_LAYOUT_DETAILS
+    return LAYOUT_DETAILS
+
+
+async def _extract_design_details(history: list[dict], project_key: str) -> str:
     """Ask GPT-4o to extract conversation-specific design details not covered by style templates."""
+    subject = "wardrobe closet" if project_key == "CLOSET" else "kitchen"
     messages = list(history) + [
         {
             "role": "user",
             "content": (
-                "From the kitchen design conversation above, extract ONLY specific details "
+                f"From the {subject} design conversation above, extract ONLY specific details "
                 "not already implied by the general style (e.g., a particular color, unusual material, "
                 "special feature, or custom element). "
                 "Return a short English phrase suitable for a Stable Diffusion prompt. "
@@ -183,6 +209,31 @@ async def _extract_design_details(history: list[dict]) -> str:
         model=settings.OPENAI_MODEL,
         messages=messages,
         max_tokens=80,
+    )
+    return (response.choices[0].message.content or "").strip()
+
+
+async def _translate_design_brief(design_brief: str, project_key: str) -> str:
+    subject = "wardrobe closet" if project_key == "CLOSET" else "kitchen"
+    messages = [
+        {
+            "role": "user",
+            "content": (
+                f"Translate this {subject} design summary into a concise English Stable Diffusion prompt fragment. "
+                "Preserve project type, dimensions, modules, material, finish and color. "
+                "Do not add a kitchen if the summary is for a closet. "
+                "Return only the prompt fragment.\n\n"
+                f"{design_brief}"
+            ),
+        }
+    ]
+
+    client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+    response = await client.chat.completions.create(
+        model=settings.OPENAI_MODEL,
+        messages=messages,
+        max_tokens=180,
+        temperature=0.2,
     )
     return (response.choices[0].message.content or "").strip()
 

@@ -16,6 +16,25 @@ STYLE_PROMPTS: dict[str, str] = {
     "minimalist": "kitchen interior design, minimalist style, clean lines, hidden storage, integrated appliances, neutral palette, soft natural light",
 }
 
+CLOSET_STYLE_PROMPTS: dict[str, str] = {
+    "modern": "wardrobe closet interior design, modern style, full-height cabinet doors, organized hanging space, drawers, shelves, soft natural light",
+    "classic": "wardrobe closet interior design, classic built-in cabinetry, framed doors, elegant handles, organized hanging space, warm lighting",
+    "rustic": "wardrobe closet interior design, rustic wood built-in wardrobe, natural grain texture, open shelving, warm inviting tones",
+    "industrial": "wardrobe closet interior design, industrial built-in storage, dark metal accents, open shelves, drawers, matte finishes",
+    "minimalist": "wardrobe closet interior design, minimalist built-in wardrobe, clean lines, flat doors, hidden storage, neutral palette, soft natural light",
+}
+
+BOTH_STYLE_PROMPTS: dict[str, str] = {
+    key: f"{STYLE_PROMPTS[key]}, matching built-in wardrobe closet cabinetry"
+    for key in STYLE_PROMPTS
+}
+
+PROJECT_STYLE_PROMPTS: dict[str, dict[str, str]] = {
+    "KITCHEN": STYLE_PROMPTS,
+    "CLOSET": CLOSET_STYLE_PROMPTS,
+    "BOTH": BOTH_STYLE_PROMPTS,
+}
+
 # Maps Spanish (and English) style names to canonical STYLE_PROMPTS keys
 STYLE_MAP: dict[str, str] = {
     "moderno": "modern",
@@ -40,10 +59,23 @@ LAYOUT_DETAILS: dict[str, str] = {
     "isla": "open kitchen with central island, extra prep space and breakfast seating",
 }
 
+CLOSET_LAYOUT_DETAILS: dict[str, str] = {
+    "lineal": "linear built-in wardrobe spanning one wall",
+    "linear": "linear built-in wardrobe spanning one wall",
+    "l-shaped": "L-shaped closet storage wrapping around a corner",
+    "en l": "L-shaped closet storage wrapping around a corner",
+    "u-shaped": "U-shaped walk-in closet with storage on three sides",
+    "en u": "U-shaped walk-in closet with storage on three sides",
+    "walk-in": "walk-in closet with organized hanging rails, drawers and open shelves",
+    "vestidor": "walk-in closet with organized hanging rails, drawers and open shelves",
+}
+
 FINISH_DETAILS: dict[str, str] = {
     "white matte": "white matte cabinet finish, clean bright surfaces, minimalist hardware",
     "blanco mate": "white matte cabinet finish, clean bright surfaces, minimalist hardware",
     "blanco opaco": "white matte cabinet finish, clean bright surfaces, minimalist hardware",
+    "blanco brillante": "high gloss white finish, reflective clean bright surfaces, minimalist hardware",
+    "alto brillo blanco": "high gloss white finish, reflective clean bright surfaces, minimalist hardware",
     "oak wood": "warm oak wood cabinet finish, natural grain texture, warm inviting tones",
     "madera roble": "warm oak wood cabinet finish, natural grain texture, warm inviting tones",
     "roble": "warm oak wood cabinet finish, natural grain texture, warm inviting tones",

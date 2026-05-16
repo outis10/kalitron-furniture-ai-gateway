@@ -93,3 +93,19 @@ async def test_build_prompt_from_chat(style, layout, finish, expected_key, extra
         assert extracted.lower() in positive.lower(), (
             f"extracted detail {extracted!r} not found in positive prompt"
         )
+
+
+@pytest.mark.asyncio
+async def test_build_prompt_from_chat_uses_closet_project_type():
+    result = await build_prompt_from_chat(
+        [],
+        style="minimalista",
+        layout="lineal",
+        finish="blanco brillante",
+        project_type="CLOSET",
+    )
+
+    positive = result["positive"].lower()
+    assert positive.startswith("wardrobe closet interior design, ")
+    assert "kitchen interior design" not in positive
+    assert "linear built-in wardrobe" in positive

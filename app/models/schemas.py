@@ -29,6 +29,8 @@ class GenerateRequest(BaseModel):
     style: str = "moderno"  # moderno | rustico | minimalista | clasico | industrial
     layout: Optional[str] = None  # island | l-shaped | u-shaped | galley
     finish: Optional[str] = None  # white matte | oak wood | gray matte | black matte
+    project_type: str = "KITCHEN"  # KITCHEN | CLOSET | BOTH
+    design_brief: Optional[str] = None
 
 
 class GenerateResponse(BaseModel):

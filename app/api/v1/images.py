@@ -14,9 +14,11 @@ router = APIRouter()
 async def comfyui_health() -> HealthResponse:
     """Check ComfyUI availability."""
     try:
-        params = {"token": settings.COMFYUI_TOKEN} if settings.COMFYUI_TOKEN else {}
-        async with httpx.AsyncClient(timeout=5, verify=settings.COMFYUI_VERIFY_SSL, follow_redirects=True) as client:
-            resp = await client.get(f"{settings.COMFYUI_URL}/system_stats", params=params)
+        auth_params = {"token": settings.COMFYUI_TOKEN} if settings.COMFYUI_TOKEN else {}
+        async with httpx.AsyncClient(timeout=5, verify=settings.COMFYUI_VERIFY_SSL) as client:
+            if settings.COMFYUI_TOKEN:
+                await client.get(f"{settings.COMFYUI_URL}/", params=auth_params, follow_redirects=True)
+            resp = await client.get(f"{settings.COMFYUI_URL}/system_stats")
             resp.raise_for_status()
             data = resp.json()
             device = data.get("devices", [{}])[0].get("name", "unknown")
@@ -36,6 +38,8 @@ async def generate_image(payload: GenerateRequest) -> GenerateResponse:
             style=payload.style,
             layout=payload.layout,
             finish=payload.finish,
+            project_type=payload.project_type,
+            design_brief=payload.design_brief,
         )
         result = await image_service.generate_kitchen_concept(
             session_id=payload.session_id,
@@ -46,4 +50,5 @@ async def generate_image(payload: GenerateRequest) -> GenerateResponse:
     except TimeoutError:
         raise HTTPException(status_code=status.HTTP_504_GATEWAY_TIMEOUT, detail="ComfyUI timed out")
     except Exception as e:
+        logger.exception("Image generation failed")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
