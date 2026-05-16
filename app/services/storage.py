@@ -131,7 +131,8 @@ class LocalStorageBackend(StorageBackend):
         return url
 
     def public_url(self, key: str) -> str:
-        return f"/outputs/{key}"
+        from app.core.config import settings
+        return f"{settings.GATEWAY_PUBLIC_URL.rstrip('/')}/outputs/{key}"
 
 
 # ── Factory (lazy singleton) ──────────────────────────────────────────────────

@@ -33,6 +33,9 @@ class Settings(BaseSettings):
     # Local storage fallback
     OUTPUT_DIR: str = "./outputs"
 
+    # Public base URL of this gateway (used to build absolute image URLs in local storage mode)
+    GATEWAY_PUBLIC_URL: str = "http://localhost:8000"
+
     # JHipster Studio backend
     JHIPSTER_BACKEND_URL: str = "http://localhost:8080"
 
