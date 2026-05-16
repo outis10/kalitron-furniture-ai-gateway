@@ -14,8 +14,9 @@ router = APIRouter()
 async def comfyui_health() -> HealthResponse:
     """Check ComfyUI availability."""
     try:
-        async with httpx.AsyncClient(timeout=5, verify=settings.COMFYUI_VERIFY_SSL) as client:
-            resp = await client.get(f"{settings.COMFYUI_URL}/system_stats")
+        params = {"token": settings.COMFYUI_TOKEN} if settings.COMFYUI_TOKEN else {}
+        async with httpx.AsyncClient(timeout=5, verify=settings.COMFYUI_VERIFY_SSL, follow_redirects=True) as client:
+            resp = await client.get(f"{settings.COMFYUI_URL}/system_stats", params=params)
             resp.raise_for_status()
             data = resp.json()
             device = data.get("devices", [{}])[0].get("name", "unknown")

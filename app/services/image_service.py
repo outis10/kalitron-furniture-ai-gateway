@@ -23,6 +23,13 @@ def _comfyui_headers() -> dict[str, str]:
     return {}
 
 
+def _comfyui_params() -> dict[str, str]:
+    """Return base query params; adds token for Vast.ai auth."""
+    if settings.COMFYUI_TOKEN:
+        return {"token": settings.COMFYUI_TOKEN}
+    return {}
+
+
 def _prompt_url() -> str:
     """POST endpoint to submit a workflow."""
     if settings.comfyui_cloud_mode:
@@ -109,11 +116,12 @@ async def _run_txt2img(positive_prompt: str, session_id: str) -> tuple[str, str]
 async def _upload_image_to_comfyui(image_bytes: bytes, filename: str | None = None) -> str:
     """Upload a reference image to ComfyUI and return the stored filename."""
     filename = filename or f"{uuid.uuid4().hex}.png"
-    async with httpx.AsyncClient(timeout=30, headers=_comfyui_headers(), verify=settings.COMFYUI_VERIFY_SSL) as client:
+    async with httpx.AsyncClient(timeout=30, headers=_comfyui_headers(), verify=settings.COMFYUI_VERIFY_SSL, follow_redirects=True) as client:
         response = await client.post(
             _upload_url(),
             files={"image": (filename, image_bytes, "image/png")},
             data={"type": "input", "overwrite": "true"},
+            params=_comfyui_params(),
         )
         response.raise_for_status()
         name = response.json()["name"]
@@ -124,10 +132,11 @@ async def _upload_image_to_comfyui(image_bytes: bytes, filename: str | None = No
 async def _queue_comfyui_prompt(workflow: dict) -> str:
     """Submit a workflow to ComfyUI and return the prompt_id."""
     client_id = uuid.uuid4().hex
-    async with httpx.AsyncClient(timeout=30, headers=_comfyui_headers(), verify=settings.COMFYUI_VERIFY_SSL) as client:
+    async with httpx.AsyncClient(timeout=30, headers=_comfyui_headers(), verify=settings.COMFYUI_VERIFY_SSL, follow_redirects=True) as client:
         resp = await client.post(
             _prompt_url(),
             json={"prompt": workflow, "client_id": client_id},
+            params=_comfyui_params(),
         )
         resp.raise_for_status()
         prompt_id: str = resp.json()["prompt_id"]
@@ -140,9 +149,9 @@ async def _wait_for_result(prompt_id: str, output_node: str, timeout: int = 180)
     loop = asyncio.get_running_loop()
     deadline = loop.time() + timeout
 
-    async with httpx.AsyncClient(timeout=10, headers=_comfyui_headers(), verify=settings.COMFYUI_VERIFY_SSL) as client:
+    async with httpx.AsyncClient(timeout=10, headers=_comfyui_headers(), verify=settings.COMFYUI_VERIFY_SSL, follow_redirects=True) as client:
         while loop.time() < deadline:
-            resp = await client.get(_history_url(prompt_id))
+            resp = await client.get(_history_url(prompt_id), params=_comfyui_params())
             resp.raise_for_status()
 
             done, outputs = _is_job_done(prompt_id, resp.json())
@@ -151,6 +160,7 @@ async def _wait_for_result(prompt_id: str, output_node: str, timeout: int = 180)
                 img_resp = await client.get(
                     _view_url(),
                     params={
+                        **_comfyui_params(),
                         "filename": image_meta["filename"],
                         "subfolder": image_meta.get("subfolder", ""),
                         "type": "output",
