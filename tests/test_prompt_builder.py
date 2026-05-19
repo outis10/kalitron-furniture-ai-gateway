@@ -1,4 +1,6 @@
 """Tests for build_prompt_from_chat — 10 conversation samples."""
+import asyncio
+
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -109,3 +111,25 @@ async def test_build_prompt_from_chat_uses_closet_project_type():
     assert positive.startswith("wardrobe closet interior design, ")
     assert "kitchen interior design" not in positive
     assert "linear built-in wardrobe" in positive
+
+
+def test_build_prompt_from_chat_extracts_gloss_black_finish_from_brief():
+    brief = """
+    • Tipo de proyecto: Cocina
+    • Estilo: Minimalista negro
+    • Distribución: En L
+    • Material: Melamina negro alto brillo
+    • Acabado/Color: Encimera blanca con ribetes negros
+    • Notas adicionales: Mantener la estructura y distribución actual
+    """
+
+    async def run_test():
+        with patch("app.services.llm_service._translate_design_brief", new=AsyncMock(return_value="minimalist kitchen with glossy black melamine flat cabinet doors")):
+            return await build_prompt_from_chat([], style="minimalista", design_brief=brief)
+
+    result = asyncio.run(run_test())
+
+    positive = result["positive"].lower()
+    assert "l-shaped kitchen layout" in positive
+    assert "high gloss black melamine cabinet finish" in positive
+    assert "reflective deep black flat surfaces" in positive

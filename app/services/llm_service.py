@@ -27,7 +27,11 @@ REGLAS OBLIGATORIAS:
 1. Responde SIEMPRE en español.
 2. Haz MÁXIMO 2 preguntas por turno. Nunca bombardees al cliente con más.
 3. Sigue el flujo de 7 pasos en orden, adaptando el tono al cliente.
-4. Cuando el cliente confirme el resumen estructurado, escribe el token SPECS_READY \
+4. Si el cliente adjunta una foto, úsala como fuente principal para inferir estructura, \
+distribución visible, módulos visibles, colores/materiales aparentes y estilo. No preguntes \
+por distribución o módulos que ya sean visibles; descríbelos como inferencia y pide solo \
+medidas reales o detalles que no puedas determinar con confianza.
+5. Cuando el cliente confirme el resumen estructurado, escribe el token SPECS_READY \
 en una línea sola al final de tu respuesta.
 
 FLUJO DE CONVERSACIÓN:
@@ -95,7 +99,10 @@ async def chat(
         visual_instruction = (
             "El cliente adjuntó una imagen de referencia. Analízala visualmente y úsala para inferir "
             "distribución, módulos, colores, materiales y estilo. No digas que no puedes ver imágenes. "
-            "Si algún detalle no es claro, pregunta solo por ese detalle.\n\n"
+            "No pidas al cliente confirmar la distribución o los módulos visibles en la foto; descríbelos "
+            "como inferencia visual. Pregunta solo por medidas reales, cambios deseados o detalles que "
+            "no puedas determinar con confianza. Si el cliente pide conservar la estructura, asume que la "
+            "distribución visible de la foto debe preservarse.\n\n"
             f"Mensaje del cliente: {user_message}"
         )
         content: list | str = [
@@ -201,8 +208,8 @@ async def build_image_prompt(
 
 
 _COLOR_MAP: dict[str, str] = {
-    "negro": "matte black cabinets, all-black kitchen furniture, dark black cabinet color",
-    "black": "matte black cabinets, all-black kitchen furniture, dark black cabinet color",
+    "negro": "black cabinets, all-black kitchen furniture, dark black cabinet color",
+    "black": "black cabinets, all-black kitchen furniture, dark black cabinet color",
     "blanco": "white cabinets, all-white kitchen furniture, bright white cabinet color",
     "white": "white cabinets, all-white kitchen furniture, bright white cabinet color",
     "gris": "gray cabinets, grey kitchen furniture, gray cabinet color",
@@ -259,7 +266,19 @@ def _extract_layout_finish_from_brief(brief: str) -> tuple[str | None, str | Non
             value = line.split(":", 1)[-1].strip().lower()
             finish = value
 
+    if not finish or finish not in FINISH_DETAILS:
+        finish = _extract_finish_keyword(brief)
+
     return layout, finish
+
+
+def _extract_finish_keyword(text: str) -> str | None:
+    """Return the most specific known finish keyword found anywhere in free text."""
+    text_lower = text.lower()
+    for key in sorted(FINISH_DETAILS, key=len, reverse=True):
+        if key in text_lower:
+            return key
+    return None
 
 
 def normalize_project_type(project_type: str | None) -> str:
@@ -318,6 +337,7 @@ async def _translate_design_brief(design_brief: str, project_key: str) -> str:
                 "- If the layout is 'en U' or 'U-shaped', include 'U-shaped kitchen layout'.\n"
                 "- If the layout is 'isla' or 'island', include 'kitchen with central island'.\n"
                 "- Preserve finish, color, material and modules.\n"
+                "- If there are visual revision instructions, they override conflicting details from the earlier summary.\n"
                 "- Do not add a kitchen if the summary is for a closet.\n"
                 "- Return only the prompt fragment, no explanation.\n\n"
                 f"{design_brief}"
