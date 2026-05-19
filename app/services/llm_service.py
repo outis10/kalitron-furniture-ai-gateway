@@ -78,7 +78,12 @@ def session_turn_count(session_id: str) -> int:
 
 # ── Chat ──────────────────────────────────────────────────────────────────────
 
-async def chat(session_id: str, user_message: str, image_b64: str | None = None) -> tuple[str, bool]:
+async def chat(
+    session_id: str,
+    user_message: str,
+    image_b64: str | None = None,
+    image_mime_type: str = "image/jpeg",
+) -> tuple[str, bool]:
     """Send *user_message* and return (reply, specs_ready).
 
     If *image_b64* is provided it is sent as a vision content array alongside
@@ -87,9 +92,15 @@ async def chat(session_id: str, user_message: str, image_b64: str | None = None)
     history = get_session(session_id)
 
     if image_b64:
+        visual_instruction = (
+            "El cliente adjuntó una imagen de referencia. Analízala visualmente y úsala para inferir "
+            "distribución, módulos, colores, materiales y estilo. No digas que no puedes ver imágenes. "
+            "Si algún detalle no es claro, pregunta solo por ese detalle.\n\n"
+            f"Mensaje del cliente: {user_message}"
+        )
         content: list | str = [
-            {"type": "text", "text": user_message},
-            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_b64}"}},
+            {"type": "text", "text": visual_instruction},
+            {"type": "image_url", "image_url": {"url": f"data:{normalize_image_mime_type(image_mime_type)};base64,{image_b64}"}},
         ]
     else:
         content = user_message
@@ -112,6 +123,12 @@ async def chat(session_id: str, user_message: str, image_b64: str | None = None)
     return clean_reply, specs_ready
 
 
+def normalize_image_mime_type(image_mime_type: str | None) -> str:
+    if image_mime_type in ("image/jpeg", "image/png", "image/webp"):
+        return image_mime_type
+    return "image/jpeg"
+
+
 # ── Prompt building ───────────────────────────────────────────────────────────
 
 async def build_prompt_from_chat(
@@ -127,19 +144,32 @@ async def build_prompt_from_chat(
     Returns {"positive": str, "negative": str, "style_key": str}.
     The positive prompt is always in English and ends with quality tags.
     """
-    style_key = STYLE_MAP.get(style.lower(), "modern")
+    style_key = _resolve_style_key(style)
     project_key = normalize_project_type(project_type)
     base = PROJECT_STYLE_PROMPTS[project_key][style_key]
 
     extra: list[str] = []
 
-    if layout:
-        detail = layout_details_for_project(project_key).get(layout.lower())
+    # Explicit color extracted from composite style name ("Minimalista Negro" → "black")
+    color_fragment = _extract_color_from_style(style)
+    if color_fragment:
+        extra.append(color_fragment)
+
+    # When layout/finish arrive as null, attempt to extract them from the brief
+    effective_layout = layout
+    effective_finish = finish
+    if design_brief and (not effective_layout or not effective_finish):
+        extracted_layout, extracted_finish = _extract_layout_finish_from_brief(design_brief)
+        effective_layout = effective_layout or extracted_layout
+        effective_finish = effective_finish or extracted_finish
+
+    if effective_layout:
+        detail = layout_details_for_project(project_key).get(effective_layout.lower())
         if detail:
             extra.append(detail)
 
-    if finish:
-        detail = FINISH_DETAILS.get(finish.lower())
+    if effective_finish:
+        detail = FINISH_DETAILS.get(effective_finish.lower())
         if detail:
             extra.append(detail)
 
@@ -168,6 +198,68 @@ async def build_image_prompt(
     history = get_session(session_id)
     result = await build_prompt_from_chat(history, style, layout, finish, project_type, design_brief)
     return result["positive"], result["negative"]
+
+
+_COLOR_MAP: dict[str, str] = {
+    "negro": "matte black cabinets, all-black kitchen furniture, dark black cabinet color",
+    "black": "matte black cabinets, all-black kitchen furniture, dark black cabinet color",
+    "blanco": "white cabinets, all-white kitchen furniture, bright white cabinet color",
+    "white": "white cabinets, all-white kitchen furniture, bright white cabinet color",
+    "gris": "gray cabinets, grey kitchen furniture, gray cabinet color",
+    "gray": "gray cabinets, grey kitchen furniture, gray cabinet color",
+    "grey": "gray cabinets, grey kitchen furniture, gray cabinet color",
+    "roble": "oak wood cabinets, warm oak cabinet color, natural wood grain",
+    "oak": "oak wood cabinets, warm oak cabinet color, natural wood grain",
+}
+
+
+def _extract_color_from_style(style: str) -> str | None:
+    """Return an explicit English color phrase when the style name contains a color modifier.
+
+    'Minimalista Negro' → 'matte black cabinets, all-black kitchen furniture, dark black cabinet color'
+    'Moderno Blanco'    → 'white cabinets, ...'
+    'Moderno'           → None
+    """
+    style_lower = style.lower()
+    for token, phrase in _COLOR_MAP.items():
+        if token in style_lower:
+            return phrase
+    return None
+
+
+def _resolve_style_key(style: str) -> str:
+    """Map a raw style string (possibly composite like 'Minimalista Negro') to a STYLE_MAP key.
+
+    Tries exact match first, then substring match so 'Minimalista Negro' → 'minimalist'.
+    """
+    style_lower = style.lower().strip()
+    if style_lower in STYLE_MAP:
+        return STYLE_MAP[style_lower]
+    for key, mapped in STYLE_MAP.items():
+        if key in style_lower:
+            return mapped
+    return "modern"
+
+
+def _extract_layout_finish_from_brief(brief: str) -> tuple[str | None, str | None]:
+    """Extract layout and finish values from a structured design brief using keyword scan.
+
+    Looks for 'Distribución:' and 'Acabado/Color:' lines and returns normalized tokens
+    that can be looked up in LAYOUT_DETAILS and FINISH_DETAILS.
+    """
+    layout: str | None = None
+    finish: str | None = None
+
+    for line in brief.splitlines():
+        line_lower = line.lower()
+        if "distribución:" in line_lower or "distribucion:" in line_lower:
+            value = line.split(":", 1)[-1].strip().lower()
+            layout = value
+        elif "acabado" in line_lower and ":" in line_lower:
+            value = line.split(":", 1)[-1].strip().lower()
+            finish = value
+
+    return layout, finish
 
 
 def normalize_project_type(project_type: str | None) -> str:
@@ -220,9 +312,14 @@ async def _translate_design_brief(design_brief: str, project_key: str) -> str:
             "role": "user",
             "content": (
                 f"Translate this {subject} design summary into a concise English Stable Diffusion prompt fragment. "
-                "Preserve project type, dimensions, modules, material, finish and color. "
-                "Do not add a kitchen if the summary is for a closet. "
-                "Return only the prompt fragment.\n\n"
+                "Rules:\n"
+                "- If the layout is 'lineal' or 'galley' or 'linear', you MUST include 'single-wall galley kitchen layout' and NEVER include island, L-shape or U-shape.\n"
+                "- If the layout is 'en L' or 'L-shaped', include 'L-shaped kitchen layout'.\n"
+                "- If the layout is 'en U' or 'U-shaped', include 'U-shaped kitchen layout'.\n"
+                "- If the layout is 'isla' or 'island', include 'kitchen with central island'.\n"
+                "- Preserve finish, color, material and modules.\n"
+                "- Do not add a kitchen if the summary is for a closet.\n"
+                "- Return only the prompt fragment, no explanation.\n\n"
                 f"{design_brief}"
             ),
         }

@@ -158,6 +158,8 @@ async def _queue_comfyui_prompt(workflow: dict) -> str:
             _prompt_url(),
             json={"prompt": workflow, "client_id": client_id},
         )
+        if not resp.is_success:
+            logger.error("ComfyUI rejected prompt — status=%s body=%s", resp.status_code, resp.text)
         resp.raise_for_status()
         body = resp.json()
         logger.info("ComfyUI prompt response: %s", body)

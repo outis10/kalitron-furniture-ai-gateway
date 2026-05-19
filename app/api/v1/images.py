@@ -32,6 +32,16 @@ async def comfyui_health() -> HealthResponse:
 @router.post("/generate", response_model=GenerateResponse)
 async def generate_image(payload: GenerateRequest) -> GenerateResponse:
     """Generate a kitchen concept image using SDXL via ComfyUI."""
+    logger.info(
+        "generate request — session=%s style=%r layout=%r finish=%r project_type=%r has_image=%s brief_len=%s",
+        payload.session_id,
+        payload.style,
+        payload.layout,
+        payload.finish,
+        payload.project_type,
+        payload.client_image_b64 is not None,
+        len(payload.design_brief) if payload.design_brief else 0,
+    )
     try:
         positive_prompt, _ = await llm_service.build_image_prompt(
             session_id=payload.session_id,
@@ -41,6 +51,7 @@ async def generate_image(payload: GenerateRequest) -> GenerateResponse:
             project_type=payload.project_type,
             design_brief=payload.design_brief,
         )
+        logger.info("resolved prompt — session=%s prompt=%r", payload.session_id, positive_prompt)
         result = await image_service.generate_kitchen_concept(
             session_id=payload.session_id,
             positive_prompt=positive_prompt,
