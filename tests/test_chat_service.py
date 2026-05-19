@@ -133,6 +133,8 @@ async def test_chat_formats_vision_content_array_when_image_provided():
     types = {part["type"] for part in user_msg["content"]}
     assert types == {"text", "image_url"}
     assert "No digas que no puedes ver imágenes" in user_msg["content"][0]["text"]
+    assert "No pidas al cliente confirmar la distribución" in user_msg["content"][0]["text"]
+    assert "conservar la estructura" in user_msg["content"][0]["text"]
     assert "abc123" in user_msg["content"][1]["image_url"]["url"]
     assert "data:image/webp;base64" in user_msg["content"][1]["image_url"]["url"]
     clear_session(sid)

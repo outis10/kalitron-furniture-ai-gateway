@@ -78,6 +78,9 @@ FINISH_DETAILS: dict[str, str] = {
     "alto brillo": "high gloss finish, reflective smooth surfaces, minimalist hardware",
     "alto brillo blanco": "high gloss white finish, reflective clean bright surfaces, minimalist hardware",
     "alto brillo negro": "high gloss black finish, dramatic reflective surfaces, sleek statement",
+    "negro brillante": "high gloss black cabinet finish, reflective deep black surfaces, sleek minimalist hardware",
+    "negro alto brillo": "high gloss black cabinet finish, reflective deep black surfaces, sleek minimalist hardware",
+    "melamina negro alto brillo": "high gloss black melamine cabinet finish, reflective deep black flat surfaces, sleek minimalist hardware",
     "oak wood": "warm oak wood cabinet finish, natural grain texture, warm inviting tones",
     "madera roble": "warm oak wood cabinet finish, natural grain texture, warm inviting tones",
     "roble": "warm oak wood cabinet finish, natural grain texture, warm inviting tones",
@@ -99,9 +102,9 @@ IMG2IMG_WORKFLOW: dict = {
     "10": {"class_type": "LoadImage", "inputs": {"image": "PLACEHOLDER_IMAGE", "upload": "image"}},
     "11": {"class_type": "CannyEdgePreprocessor", "inputs": {"image": ["10", 0], "low_threshold": 100, "high_threshold": 200, "resolution": 1024}},
     "12": {"class_type": "ControlNetLoader", "inputs": {"control_net_name": "controlnet-canny-sdxl-1.0.safetensors"}},
-    "13": {"class_type": "ControlNetApplyAdvanced", "inputs": {"positive": ["6", 0], "negative": ["7", 0], "control_net": ["12", 0], "image": ["11", 0], "strength": 0.70, "start_percent": 0.0, "end_percent": 1.0}},
+    "13": {"class_type": "ControlNetApplyAdvanced", "inputs": {"positive": ["6", 0], "negative": ["7", 0], "control_net": ["12", 0], "image": ["11", 0], "strength": 0.75, "start_percent": 0.0, "end_percent": 1.0}},
     "14": {"class_type": "EmptyLatentImage", "inputs": {"width": 1024, "height": 768, "batch_size": 1}},
-    "15": {"class_type": "KSampler", "inputs": {"model": ["4", 0], "positive": ["13", 0], "negative": ["13", 1], "latent_image": ["14", 0], "seed": 42, "steps": 35, "cfg": 7.5, "sampler_name": "dpmpp_2m", "scheduler": "karras", "denoise": 1.0}},
+    "15": {"class_type": "KSampler", "inputs": {"model": ["4", 0], "positive": ["13", 0], "negative": ["13", 1], "latent_image": ["14", 0], "seed": 42, "steps": 35, "cfg": 7.5, "sampler_name": "dpmpp_2m", "scheduler": "karras", "denoise": 0.75}},
     "16": {"class_type": "VAEDecode", "inputs": {"samples": ["15", 0], "vae": ["5", 0]}},
     "17": {"class_type": "SaveImage", "inputs": {"images": ["16", 0], "filename_prefix": "kalitron_img2img"}},
 }
@@ -122,6 +125,7 @@ def get_img2img_workflow(full_positive_prompt: str, image_filename: str) -> dict
     """Return a ready-to-submit img2img workflow. full_positive_prompt is used as-is."""
     workflow = deepcopy(IMG2IMG_WORKFLOW)
     workflow["6"]["inputs"]["text"] = full_positive_prompt
+    workflow["7"]["inputs"]["text"] = negative_prompt_for(full_positive_prompt)
     workflow["10"]["inputs"]["image"] = image_filename
     return workflow
 
@@ -130,4 +134,18 @@ def get_txt2img_workflow(full_positive_prompt: str) -> dict:
     """Return a ready-to-submit txt2img workflow. full_positive_prompt is used as-is."""
     workflow = deepcopy(TXT2IMG_WORKFLOW)
     workflow["6"]["inputs"]["text"] = full_positive_prompt
+    workflow["7"]["inputs"]["text"] = negative_prompt_for(full_positive_prompt)
     return workflow
+
+
+def negative_prompt_for(full_positive_prompt: str) -> str:
+    """Strengthen the negative prompt when the brief asks for black cabinets."""
+    prompt_lower = full_positive_prompt.lower()
+    black_requested = "black cabinet" in prompt_lower or "all-black" in prompt_lower or "deep black" in prompt_lower
+    if not black_requested:
+        return NEGATIVE_PROMPT
+
+    return (
+        f"{NEGATIVE_PROMPT}, brown cabinets, honey oak cabinets, orange wood cabinets, "
+        "natural wood grain cabinet fronts, stained wood cabinet fronts, raised panel shaker doors"
+    )
