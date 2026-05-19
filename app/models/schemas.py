@@ -13,6 +13,7 @@ class ChatRequest(BaseModel):
     session_id: str
     message: str
     image_b64: Optional[str] = None  # base64-encoded image for vision
+    image_mime_type: str = "image/jpeg"
 
 
 class ChatResponse(BaseModel):
