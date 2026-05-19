@@ -13,6 +13,7 @@ class ChatRequest(BaseModel):
     session_id: str
     message: str
     image_b64: Optional[str] = None  # base64-encoded image for vision
+    image_mime_type: str = "image/jpeg"
 
 
 class ChatResponse(BaseModel):
@@ -29,6 +30,8 @@ class GenerateRequest(BaseModel):
     style: str = "moderno"  # moderno | rustico | minimalista | clasico | industrial
     layout: Optional[str] = None  # island | l-shaped | u-shaped | galley
     finish: Optional[str] = None  # white matte | oak wood | gray matte | black matte
+    project_type: str = "KITCHEN"  # KITCHEN | CLOSET | BOTH
+    design_brief: Optional[str] = None
 
 
 class GenerateResponse(BaseModel):

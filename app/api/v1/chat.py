@@ -13,6 +13,7 @@ async def send_message(payload: ChatRequest) -> ChatResponse:
             session_id=payload.session_id,
             user_message=payload.message,
             image_b64=payload.image_b64,
+            image_mime_type=payload.image_mime_type,
         )
         return ChatResponse(session_id=payload.session_id, reply=reply, specs_ready=specs_ready)
     except Exception as e:

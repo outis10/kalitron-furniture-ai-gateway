@@ -125,14 +125,16 @@ async def test_chat_formats_vision_content_array_when_image_provided():
     mock_client = _make_mock_openai("Veo una cocina moderna en la foto.")
 
     with patch("app.services.llm_service.AsyncOpenAI", return_value=mock_client):
-        await chat(sid, "Aquí está mi cocina actual", image_b64="abc123")
+        await chat(sid, "Aquí está mi cocina actual", image_b64="abc123", image_mime_type="image/webp")
 
     history = get_session(sid)
     user_msg = next(m for m in history if m["role"] == "user")
     assert isinstance(user_msg["content"], list)
     types = {part["type"] for part in user_msg["content"]}
     assert types == {"text", "image_url"}
+    assert "No digas que no puedes ver imágenes" in user_msg["content"][0]["text"]
     assert "abc123" in user_msg["content"][1]["image_url"]["url"]
+    assert "data:image/webp;base64" in user_msg["content"][1]["image_url"]["url"]
     clear_session(sid)
 
 

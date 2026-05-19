@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     # ComfyUI
     COMFYUI_URL: str = "http://localhost:8188"
     COMFYUI_API_KEY: str = ""  # set to enable Comfy.org Cloud mode
+    COMFYUI_TOKEN: str = ""  # set for Vast.ai token-based auth (?token=...)
     COMFYUI_VERIFY_SSL: bool = True  # set to false when corporate SSL inspection intercepts RunPod proxy
 
     # OpenAI
@@ -32,6 +33,9 @@ class Settings(BaseSettings):
 
     # Local storage fallback
     OUTPUT_DIR: str = "./outputs"
+
+    # Public base URL of this gateway (used to build absolute image URLs in local storage mode)
+    GATEWAY_PUBLIC_URL: str = "http://localhost:8000"
 
     # JHipster Studio backend
     JHIPSTER_BACKEND_URL: str = "http://localhost:8080"
