@@ -101,6 +101,77 @@ class GenerateCSVResponse(BaseModel):
     filename: str
 
 
+# ── Sketch analysis ─────────────────────────────────────────────────────────
+
+class SketchAnalysisRequest(BaseModel):
+    image_b64: str
+    image_mime_type: str = "image/jpeg"
+    context: Optional[str] = None
+    project_type: Optional[str] = None  # KITCHEN | CLOSET | BOTH | null = auto-detect
+    unit: Literal["mm", "cm", "inches"] = "cm"
+    session_id: Optional[str] = None
+
+
+class SketchWall(BaseModel):
+    label: str
+    estimated_length_cm: Optional[float] = None
+    confidence: float = Field(ge=0.0, le=1.0)
+
+
+class SketchLayout(BaseModel):
+    shape: Literal["L", "U", "lineal", "isla", "unknown"] = "unknown"
+    walls: list[SketchWall] = []
+    estimated_total_width_cm: Optional[float] = None
+    estimated_total_depth_cm: Optional[float] = None
+    confidence: float = Field(ge=0.0, le=1.0)
+
+
+class SketchZone(BaseModel):
+    type: Literal["sink", "cooktop", "refrigerator", "oven", "dishwasher", "window", "door", "column", "other"]
+    wall: Optional[str] = None
+    position_hint: Optional[str] = None  # "left" | "center" | "right" | "corner"
+    confidence: float = Field(ge=0.0, le=1.0)
+
+
+class SketchCabinet(BaseModel):
+    id: str
+    category: Literal["upper", "lower", "corner", "tall", "sink"]
+    label: str
+    estimated_width_cm: Optional[float] = None
+    estimated_height_cm: Optional[float] = None
+    estimated_depth_cm: Optional[float] = None
+    wall: Optional[str] = None
+    doors: Optional[int] = None
+    drawers: Optional[int] = None
+    confidence: float = Field(ge=0.0, le=1.0)
+    warnings: list[str] = []
+
+
+class SketchWarning(BaseModel):
+    code: Literal[
+        "missing_dimension",
+        "low_confidence",
+        "ambiguous_layout",
+        "no_scale_reference",
+        "partial_sketch",
+        "unsupported_image",
+        "other",
+    ]
+    message: str
+    affected: Optional[str] = None
+
+
+class SketchAnalysisResponse(BaseModel):
+    session_id: Optional[str] = None
+    detected_project_type: Literal["KITCHEN", "CLOSET", "BOTH", "UNKNOWN"]
+    layout: SketchLayout
+    zones: list[SketchZone] = []
+    cabinets: list[SketchCabinet] = []
+    overall_confidence: float = Field(ge=0.0, le=1.0)
+    warnings: list[SketchWarning] = []
+    raw_notes: Optional[str] = None
+
+
 # ── Health ───────────────────────────────────────────────────────────────────
 
 class HealthResponse(BaseModel):
