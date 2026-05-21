@@ -13,17 +13,19 @@ router = APIRouter()
 async def analyze_sketch(payload: SketchAnalysisRequest) -> SketchAnalysisResponse:
     """Analyze a hand-drawn sketch and return a structured draft layout and cabinet list.
 
-    The response always includes confidence values and warnings for uncertain items.
-    Missing dimensions are represented as null — never silently invented.
+    All extracted fields carry confidence (HIGH/MEDIUM/LOW/MISSING) and sourceText.
+    Missing dimensions are null — never silently invented.
+    Studio must present the result for user review before persisting.
     """
     try:
         return await sketch_service.analyze_sketch(
             image_b64=payload.image_b64,
             image_mime_type=payload.image_mime_type,
-            context=payload.context,
-            project_type=payload.project_type,
-            unit=payload.unit,
-            session_id=payload.session_id,
+            session_code=payload.session_code,
+            project_type_hint=payload.project_type_hint,
+            unit_hint=payload.unit_hint,
+            language=payload.language,
+            user_prompt=payload.user_prompt,
         )
     except Exception as e:
         logger.exception("Sketch analysis failed")
