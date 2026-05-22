@@ -41,9 +41,29 @@ STRICT RULES:
 4. Always populate missingInfo and questions when important data is absent.
 5. sourceText must be the exact text or visual cue from the sketch that led to the extraction, or null.
 6. Wall codes: use letters A, B, C, D... in order of appearance.
-7. Cabinet codes: A-001, A-002... per wall; category prefix U=upper, L=lower, C=corner, T=tall, S=sink.
+7. Cabinet codes: A-001, A-002... per wall (e.g. B-001, B-002 for wall B).
 8. All extracted measurements must include unit ("MM", "CM", "IN", "UNKNOWN").
 9. textObserved: list every number or label you can read from the sketch.
+
+CABINET ENUMERATION (critical — most common extraction error):
+10. List EVERY physically separate cabinet module as an individual cabinetCandidates entry.
+    DO NOT merge adjacent modules into one wide entry.
+    Each visible door, drawer group, or module boundary is a separate cabinet.
+    Example: three 60 cm base modules side by side → 3 entries each 600 mm wide, NOT 1 entry at 1800 mm.
+    Upper (aéreo) and lower (base) cabinets sharing the same horizontal position are always separate entries.
+11. A typical single wall with 3 m of cabinets contains 4–6 individual modules.
+    A U-shape kitchen usually has 12–18 individual cabinet entries across all walls.
+    If your extraction has fewer than 8 entries for a multi-wall kitchen, re-examine the sketch carefully.
+12. Every identified SINK or RANGE/STOVE zone must have a corresponding cabinetCandidate with
+    category SINK or APPLIANCE respectively, placed on the same wall at the matching x position.
+
+STANDARD DIMENSION DEFAULTS (apply when a value is not labeled or visible in the sketch):
+- LOWER / SINK / DRAWER_BASE / APPLIANCE: depth 600 mm, height 720 mm, zMm 0
+- UPPER: depth 350 mm, height 720 mm, zMm 1450 (mounted above counter height)
+- TALL: depth 600 mm, height 2100 mm, zMm 0
+- CORNER: depth 600 mm, height 720 mm, zMm 0
+- FILLER / PANEL: depth as adjacent cabinet, height as adjacent cabinet
+Use confidence "LOW" for any value taken from these defaults.
 
 LAYOUT VALUES: LINEAR | L_SHAPE | U_SHAPE | ISLAND | PENINSULA | GALLEY | CUSTOM | UNKNOWN
 PROJECT TYPE VALUES: KITCHEN | CLOSET | BOTH | UNKNOWN
@@ -147,7 +167,7 @@ async def analyze_sketch(
     response = await client.chat.completions.create(
         model=settings.OPENAI_MODEL,
         messages=messages,
-        max_tokens=3000,
+        max_tokens=4500,
         temperature=0.1,
         response_format={"type": "json_object"},
     )
