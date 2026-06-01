@@ -102,13 +102,27 @@ python -m venv venv
 venv\Scripts\activate
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
 pip install -r requirements.txt
+```
 
-# Download models into C:/AI/ComfyUI/models/
-# SDXL 1.0:     https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0
-# ControlNet:   https://huggingface.co/diffusers/controlnet-canny-sdxl-1.0
-# VAE:          https://huggingface.co/madebyollin/sdxl-vae-fp16-fix
+Download the 3 required models (see [ComfyUI Server Setup](#comfyui-server-setup) for `wget` commands):
+
+| Archivo | Carpeta | VRAM |
+|---------|---------|------|
+| `sd_xl_base_1.0.safetensors` | `models/checkpoints/` | ~6.5 GB |
+| `controlnet-canny-sdxl-1.0.safetensors` | `models/controlnet/` | ~1.5 GB |
+| `sdxl_vae.safetensors` | `models/vae/` | ~330 MB |
+
+Total: ~9.3 GB — fits RTX 3080 12 GB with headroom.
+
+Install the required custom node, then restart ComfyUI:
+
+```bash
+cd C:/AI/ComfyUI/custom_nodes
+git clone https://github.com/Fannovel16/comfyui_controlnet_aux
+cd comfyui_controlnet_aux && pip install -r requirements.txt
 
 # Start ComfyUI (keep running in a separate terminal)
+cd C:/AI/ComfyUI
 python main.py --listen 0.0.0.0
 ```
 
@@ -269,6 +283,78 @@ Copy `.env.example` to `.env` and fill in your values.
 | `CORS_ORIGINS` | — | JSON array. Default: `["http://localhost:8080","http://localhost:9000"]` |
 
 > **Dev tip:** Leave all R2 variables empty. The gateway automatically falls back to saving renders in `OUTPUT_DIR` served via `/outputs`.
+
+---
+
+## ComfyUI Server Setup
+
+These steps apply to any environment: local machine, RunPod, or vast.ai. ComfyUI itself comes pre-installed on cloud templates — start from step 2 when using a hosted instance.
+
+### Step 1 — Install ComfyUI (local only)
+
+```bash
+git clone https://github.com/comfyanonymous/ComfyUI /workspace/ComfyUI
+cd /workspace/ComfyUI
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+pip install -r requirements.txt
+```
+
+### Step 2 — Download the 3 required models
+
+ComfyUI model directories are empty on first run. Download each file into the correct subfolder:
+
+| Archivo | Carpeta | Tamaño |
+|---------|---------|--------|
+| `sd_xl_base_1.0.safetensors` | `models/checkpoints/` | ~6.5 GB |
+| `controlnet-canny-sdxl-1.0.safetensors` | `models/controlnet/` | ~1.5 GB |
+| `sdxl_vae.safetensors` | `models/vae/` | ~330 MB |
+
+```bash
+# SDXL 1.0 base checkpoint
+wget -c -O /workspace/ComfyUI/models/checkpoints/sd_xl_base_1.0.safetensors \
+  https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors
+
+# SDXL VAE fp16-fix
+wget -c -O /workspace/ComfyUI/models/vae/sdxl_vae.safetensors \
+  https://huggingface.co/madebyollin/sdxl-vae-fp16-fix/resolve/main/sdxl_vae.safetensors
+
+# ControlNet Canny SDXL (xinsir V2 — rename on download)
+wget -c -O /workspace/ComfyUI/models/controlnet/controlnet-canny-sdxl-1.0.safetensors \
+  https://huggingface.co/xinsir/controlnet-canny-sdxl-1.0/resolve/main/diffusion_pytorch_model_V2.safetensors
+```
+
+Total VRAM: ~9.3 GB — fits RTX 3080 12 GB and RTX 3090/4090 24 GB.
+
+### Step 3 — Install the required custom node
+
+`CannyEdgePreprocessor` (used by the img2img pipeline) is not bundled with ComfyUI:
+
+```bash
+cd /workspace/ComfyUI/custom_nodes
+git clone https://github.com/Fannovel16/comfyui_controlnet_aux
+cd comfyui_controlnet_aux && pip install -r requirements.txt
+```
+
+### Step 4 — Restart ComfyUI
+
+ComfyUI must be restarted after downloading models and installing custom nodes so it scans the model directories and registers the new node types.
+
+```bash
+# Local
+python /workspace/ComfyUI/main.py --listen 0.0.0.0
+
+# vast.ai — use the panel launcher or restart the running process
+# RunPod — restart the pod or rerun the start command
+```
+
+### vast.ai — Authentication
+
+Vast.ai wraps ComfyUI behind a reverse proxy. Every request requires a token visible in **Advanced Connection Options**. Set these in `.env`:
+
+```bash
+COMFYUI_URL=https://<name>.trycloudflare.com   # or http://<ip>:<port>
+COMFYUI_TOKEN=<token-from-vast-panel>
+```
 
 ---
 
