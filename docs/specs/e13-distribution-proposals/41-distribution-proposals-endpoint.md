@@ -18,7 +18,9 @@ combining LLM reasoning for **what goes where** with a deterministic packer for
    (between corners, doors, columns, full-height obstacles), service points
    (water/drain/gas), window/beam/hood bands for the upper row, and — when
    `allowFreestanding` and the room is closed — the room polygon and the
-   free floor area where an island/peninsula keeps `aisle.warningMm`.
+   free floor area where an island/peninsula keeps `island.workAisleMinMm`
+   (`island.multiCookAisleMinMm` when `multiCook`) on work sides and
+   `island.walkwayMinMm` elsewhere.
 2. **Zoning (LLM):** given segments, services, interview and library summary,
    choose distinct zoning strategies (e.g. sink under window vs. on wall B;
    fridge at run end; island/peninsula only if the room and interview allow it),
@@ -42,7 +44,7 @@ allowed widths.
 - [ ] Returns `count` proposals (or fewer with a warning if the room allows only one).
 - [ ] Every run fits its segment exactly (packer invariant, unit-tested).
 - [ ] Only library codes and allowed widths are used (unit-tested).
-- [ ] Islands/peninsulas proposed only when `allowFreestanding` and aisles ≥ `aisle.warningMm` (unit-tested).
+- [ ] Islands/peninsulas proposed only when `allowFreestanding` and aisles meet the `island.*` minimums (unit-tested).
 - [ ] Prompt version recorded in `rawExtraction`.
 - [ ] 400/502/504 as per contract; never 500 for bad LLM output.
 

@@ -35,6 +35,7 @@ distribution proposals.
     "projectType": "KITCHEN",
     "style": "moderno",
     "preferences": ["más cajones", "refrigerador de 90 cm"],
+    "multiCook": false,
     "chatSummary": "…",
     "v0ClientNotes": "…",
     "designerInstructions": "sin isla"
