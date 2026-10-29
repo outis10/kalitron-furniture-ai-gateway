@@ -6,8 +6,15 @@ outside the async web service. Contract baseline: Studio PR #175 at
 93ccd0ced99488ee8cc810f805dbb1792a396c8d; this is the diagnostic VIS-01 profile,
 not a final-ready implementation of VIS-02. See `pilot-spec.md`.
 
-Requires Blender 4.2+ with Python; actual workstation version and real Fusion
-acceptance remain pending. The pure validator uses only the Python standard library.
+Requires Blender 4.2+ with Python. Executed on Blender 5.2.3 LTS: the synthetic
+fixture imported 5 bodies and a real diagnostic kitchen imported 194 bodies without
+worker errors. Source-to-scene fidelity still requires the operator's visual review;
+the dimensional check compares the imported mesh to its manifest, not independently
+to Fusion. The pure validator uses only the Python standard library.
+
+For the Microsoft Store installation on Windows, the working command-line entry
+point was `%LOCALAPPDATA%\Microsoft\WindowsApps\blender-launcher.exe`; executing
+the binary directly under `Program Files\WindowsApps` may return Access denied.
 
 ## Run on Windows
 
