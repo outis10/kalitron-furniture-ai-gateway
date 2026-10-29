@@ -1,6 +1,6 @@
 # E17 / VIS-01 diagnostic import
 
-Status: Reviewed for implementation; manual Blender/Fusion validation pending.
+Status: Implementing; first real import visually reviewed, broader kitchen MVP pending.
 Parent: https://github.com/outis10/kalitron-furniture-studio/issues/174
 Contract: Studio PR #175, commit 93ccd0ced99488ee8cc810f805dbb1792a396c8d.
 
@@ -23,3 +23,12 @@ tests validate the package; a real Blender smoke test must additionally verify
 five placed bodies, meter-scale bounds, visibility and reimport without duplicates.
 No final-ready export, catalog resolution, registry, worker service, LLM or
 finished commercial render is claimed. Manual kitchen A/B validation follows.
+
+## Verified local import
+
+The operator's corrected v0.1.2 export imported 196 body placements under Blender
+5.2.3 LTS with 196 independent placed Fusion-bound checks passing. The operator
+reviewed orientation and shelf widths positively. A known source body failed
+tessellation and remains recorded as omitted. The next illustrative material and
+camera work is scoped separately in `render-preview-spec.md`; full final-ready
+finishes, kitchen B and revision-matching acceptance remain pending.

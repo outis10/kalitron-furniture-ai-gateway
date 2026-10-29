@@ -70,3 +70,35 @@ Source bounds span X=0..1000, Y=-400..400, Z=0..18 mm.
 Check dimensions, orientation and visibility on a real kitchen module before
 expanding to kitchen A, its revision and kitchen B. Persistent registry, full
 finish/grain resolution, cameras, lights and rendering follow this pilot.
+
+## Illustrative material and lighting previews
+
+`render_preview.py` reads the imported .blend, its matching original package and
+an explicit `kfs-preview/0.1` JSON configuration. See `render-preview-spec.md`.
+The included white-matte preset is an **unconfirmed illustrative proposal**, not
+a catalog mapping or an assertion about the operator's actual finishes.
+
+```powershell
+& 'C:\path\to\blender.exe' --background 'C:\renders\import-001\diagnostic.blend' --python-exit-code 1 --python blender_worker/render_preview.py -- --package 'C:\exports\KFS_RENDER_example' --config blender_worker/presets/white-matte-preview.json --output 'C:\renders\preview-001'
+```
+
+Outputs: `perspectiva.png`, `frontal.png`, `interior.png`, `presentacion.blend`,
+`config.json` and `render-report.json`. The report records assignments, fallbacks,
+source issues, engine/device, camera positions, hidden interior doors and timings.
+Source vertices, topology and object transforms are hashed before/after rendering;
+source visibility is restored before saving. The interior view hides only explicit
+DOOR instances, never drawer fronts or structural parts. A separate presentation
+floor and soft area lights are added. No source geometry or manufacturing model is
+modified. No wood grain, external textures or material product matching is claimed.
+
+The worker prefers available OptiX/CUDA GPU devices and otherwise uses CPU Cycles.
+The first GPU render may spend time compiling kernels. A fresh output directory
+is mandatory. If a job fails, its report records FAILED; partial images are not a
+successful completed presentation. Render completion remains illustrative and
+non-final until the operator approves finishes and source fidelity.
+
+Test configuration and precedence without Blender:
+
+```powershell
+python -m unittest discover -s blender_worker/tests -p 'test_*.py' -v
+```
