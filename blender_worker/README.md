@@ -39,7 +39,11 @@ Hidden source instances/bodies remain present but hidden. Snapshot IDs must not
 be used to apply overrides from an older export.
 
 All references, checksums, ownership, transforms and declared mesh bounds are
-validated before modifying the scene. Imported world vertices are checked within
+validated before modifying the scene. When exporter v0.1.2 provides independent
+Fusion placed-body bounds, actual world mesh vertices must match those within
+1 mm before import. This detects wrong evaluated dimensions and placements.
+Older packages lack that independent source check and cannot establish source fidelity.
+Imported world vertices are checked within
 a provisional 1 mm tolerance. Source geometry/metadata omissions remain visible
 in the report; diagnostic import success does not mean source completeness.
 Colors are unassigned neutral placeholders, not an approved finish.

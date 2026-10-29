@@ -70,6 +70,12 @@ class PackageTests(unittest.TestCase):
         self.data['instances'][-1]['world_bounds_mm']['max'][0]+=10
         self.reject()
 
+    def test_independent_fusion_dimensions_must_match(self):
+        instance=self.data['instances'][-1]
+        instance['fusion_world_bounds_mm']=copy.deepcopy(instance['world_bounds_mm'])
+        instance['fusion_world_bounds_mm']['max'][0]+=100
+        self.reject()
+
     def test_checksum_detects_tampering(self):
         reference=self.data['components'][0]['geometry_refs'][0]['path']
         with (self.package/reference).open('a') as stream:

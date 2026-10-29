@@ -115,6 +115,12 @@ def load_package(directory):
             world = bounds(transform(matrix, p) for p in itertools.product(
                 *[(local['min'][i],local['max'][i]) for i in range(3)]))
             check_bounds(world, instance['world_bounds_mm'])
+            if instance.get('fusion_world_bounds_mm'):
+                actual_world=bounds(transform(matrix,p) for ref in expected_refs for p in payloads[ref][0])
+                try:
+                    check_bounds(actual_world,instance['fusion_world_bounds_mm'],tolerance=1.0)
+                except ValueError as error:
+                    raise ValueError('Independent Fusion dimensions mismatch: '+instance['display_name']) from error
             boxes.append(world)
     if not boxes:
         raise ValueError('Package has no geometry')
@@ -195,6 +201,7 @@ def import_package(directory, output):
     report = {'status':'DIAGNOSTIC_IMPORTED', 'final_ready':False,
               'export_id':data['export_id'], 'blender_version':bpy.app.version_string,
               'imported_body_instances':len(imported), 'dimension_tolerance_mm':1.0,
+              'independent_fusion_checks':sum(bool(i.get('fusion_world_bounds_mm')) for i in data['instances']),
               'source_issues':data['validation']['issues'], 'errors':errors}
     bpy.ops.wm.save_as_mainfile(filepath=str((output/'diagnostic.blend').resolve()))
     (output/'import-report.json').write_text(json.dumps(report, indent=2), encoding='utf-8')
