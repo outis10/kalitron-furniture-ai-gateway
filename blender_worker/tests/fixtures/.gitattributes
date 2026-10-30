@@ -1,0 +1,2 @@
+# Mesh checksums must survive Windows checkouts byte-for-byte.
+*.obj -text
