@@ -78,6 +78,14 @@ an explicit `kfs-preview/0.1` JSON configuration. See `render-preview-spec.md`.
 The included white-matte preset is an **unconfirmed illustrative proposal**, not
 a catalog mapping or an assertion about the operator's actual finishes.
 
+`presets/mint-kitchen-preview.json` captures the operator's requested palette:
+doors/covers mint, gola/plinth matte black, countertop white, interiors matte
+white and pearl-beige walls. The numerical mint shade and its initial matte
+roughness are illustrative pending visual review; they are not calibrated to
+Tabylam 2VJ or any other manufacturer SKU. Unclassified parts remain diagnostic.
+Project-only definition overrides stay in local configs, separate from this
+reusable preset and from manufacturer catalog records.
+
 ```powershell
 & 'C:\path\to\blender.exe' --background 'C:\renders\import-001\diagnostic.blend' --python-exit-code 1 --python blender_worker/render_preview.py -- --package 'C:\exports\KFS_RENDER_example' --config blender_worker/presets/white-matte-preview.json --output 'C:\renders\preview-001'
 ```
