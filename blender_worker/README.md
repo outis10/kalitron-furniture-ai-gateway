@@ -86,6 +86,10 @@ Tabylam 2VJ or any other manufacturer SKU. Unclassified parts remain diagnostic.
 Project-only definition overrides stay in local configs, separate from this
 reusable preset and from manufacturer catalog records.
 
+`presets/olive-kitchen-preview.json` varies only the mint finish to an illustrative
+olive matte while preserving the requested white/black/pearl-beige palette. Its
+color is not calibrated to EGGER U640 ST9 or another commercial reference.
+
 ```powershell
 & 'C:\path\to\blender.exe' --background 'C:\renders\import-001\diagnostic.blend' --python-exit-code 1 --python blender_worker/render_preview.py -- --package 'C:\exports\KFS_RENDER_example' --config blender_worker/presets/white-matte-preview.json --output 'C:\renders\preview-001'
 ```
