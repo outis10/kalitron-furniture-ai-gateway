@@ -90,6 +90,18 @@ reusable preset and from manufacturer catalog records.
 olive matte while preserving the requested white/black/pearl-beige palette. Its
 color is not calibrated to EGGER U640 ST9 or another commercial reference.
 
+`presets/olive-kitchen-decor-preview.json` adds a small procedural potted plant
+(180×180×320 mm envelope) and rounded wooden cutting board (350×240×18 mm).
+See `decor-spec.md`. `decor_plan.py` checks configuration/footprints;
+`decor_assets.py` checks actual countertop support, source clearance and creates
+an independently owned accessory collection. Nine ray samples per prop verify
+support. This is deliberately limited to flat surfaces, not arbitrary mesh packing.
+Asset materials are original procedural shaders; no external texture images are
+downloaded. Accessories do not receive furniture instance IDs or change Fusion
+geometry. Their placement/anchor IDs and checks are included in the render report.
+Rebuilding replaces only the same export's owned accessory collection; an empty
+decor array clears owned props. Spanish prompt control remains future work.
+
 ```powershell
 & 'C:\path\to\blender.exe' --background 'C:\renders\import-001\diagnostic.blend' --python-exit-code 1 --python blender_worker/render_preview.py -- --package 'C:\exports\KFS_RENDER_example' --config blender_worker/presets/white-matte-preview.json --output 'C:\renders\preview-001'
 ```

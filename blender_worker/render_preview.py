@@ -11,6 +11,7 @@ from time import perf_counter
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 from preview_config import validate_config, resolve_material
 from import_package import load_package
+from decor_assets import build_decor
 
 
 def geometry_digest(objects):
@@ -95,6 +96,7 @@ def render_preview(package, config_path, output):
             report['material_assignments'].append({'instance_id':instance['instance_id'],
                     'body_id':obj['kfs_body_id'],'material':finish,'source':source})
         report['fallback_body_count']=sum(a['source']=='diagnostic_fallback' for a in report['material_assignments'])
+        report['decor']=build_decor(config.get('decor',[]),objects,data['export_id'])
         visible=[o for o in objects if not o.hide_render]
         points=[o.matrix_world@v.co for o in visible for v in o.data.vertices]
         low=Vector([min(p[i] for p in points) for i in range(3)])
