@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="es">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="data:,">
+<title>KFS · Cocina 360°</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#eeece6;color:#24332b;font:16px system-ui,sans-serif}
+header{padding:20px 28px;display:flex;gap:20px;align-items:center;justify-content:space-between;background:#fff}
+h1{font-size:23px;margin:0 0 5px}p{margin:0;color:#647067;font-size:14px}.controls{display:flex;gap:9px;flex-wrap:wrap}
+button,a{font:inherit;border:1px solid #c4cec5;border-radius:9px;padding:10px 15px;background:white;color:#24332b;cursor:pointer;text-decoration:none}
+button[aria-pressed=true]{background:#334e3c;color:#fff}button:disabled{opacity:.5;cursor:wait}
+model-viewer{width:100%;height:calc(100dvh - 165px);min-height:360px;background:#eeece6;--poster-color:#eeece6}
+footer{padding:12px 28px;background:#fff;font-size:14px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+@media(max-width:700px){header{align-items:flex-start;flex-direction:column;padding:16px}model-viewer{height:65dvh}footer{padding:12px 16px}}
+</style>
+<header><div><h1>Tu cocina, desde todos los ángulos</h1><p>Arrastra para girar · Rueda para acercar · Dos dedos para mover en pantalla táctil</p></div>
+<div class="controls"><button id="rotate" aria-pressed="false" disabled>Girar automáticamente</button><button id="walls" aria-pressed="true" disabled>Paredes visibles</button><button id="reset" disabled>Restablecer vista</button></div></header>
+<model-viewer id="viewer" src="kitchen.glb" alt="Cocina KFS con puertas verde olivo y encimeras blancas"
+camera-controls touch-action="pan-y" camera-orbit="42deg 70deg 7.5m" min-camera-orbit="auto 8deg 0.4m"
+max-camera-orbit="auto 88deg 16m" shadow-intensity="0.7" shadow-softness="0.8" exposure="1"
+interaction-prompt="auto" auto-rotate-delay="1000" rotation-per-second="12deg" loading="eager"></model-viewer>
+<footer><span id="status" role="status" aria-live="polite">Cargando modelo…</span><span>Vista interactiva · Acabados ilustrativos</span><a href="kitchen.glb" download>Descargar modelo 3D</a></footer>
+<script type="module">
+const status=document.querySelector('#status');
+try { await import('./model-viewer.min.js'); } catch { status.textContent='No se pudo iniciar el visor. Recarga la página.'; }
+const viewer=document.querySelector('#viewer');
+const rotate=document.querySelector('#rotate'),walls=document.querySelector('#walls'),reset=document.querySelector('#reset');
+let showWalls=true, savedCamera=null;
+viewer.addEventListener('progress',e=>{if(!viewer.loaded)status.textContent=`Cargando modelo… ${Math.round(e.detail.totalProgress*100)} %`;});
+viewer.addEventListener('load',()=>{
+  if(savedCamera){viewer.cameraOrbit=savedCamera.orbit;viewer.cameraTarget=savedCamera.target;savedCamera=null;viewer.jumpCameraToGoal();}
+  status.textContent='Listo · Gira la cocina para revisar el filler y los faldones';
+  [rotate,walls,reset].forEach(b=>b.disabled=false);
+});
+viewer.addEventListener('error',()=>{status.textContent='No se pudo cargar el modelo. Recarga la página para reintentar.';});
+rotate.onclick=()=>{viewer.autoRotate=!viewer.autoRotate;rotate.setAttribute('aria-pressed',String(viewer.autoRotate));rotate.textContent=viewer.autoRotate?'Pausar giro':'Girar automáticamente';};
+walls.onclick=()=>{
+ const o=viewer.getCameraOrbit(),t=viewer.getCameraTarget();
+ savedCamera={orbit:`${o.theta}rad ${o.phi}rad ${o.radius}m`,target:`${t.x}m ${t.y}m ${t.z}m`};
+ showWalls=!showWalls;walls.setAttribute('aria-pressed',String(showWalls));walls.textContent=showWalls?'Paredes visibles':'Paredes ocultas';
+ [rotate,walls,reset].forEach(b=>b.disabled=true);viewer.src=showWalls?'kitchen.glb':'kitchen-no-walls.glb';
+};
+reset.onclick=()=>{viewer.resetTurntableRotation();viewer.cameraTarget='auto auto auto';viewer.cameraOrbit='42deg 70deg 7.5m';viewer.jumpCameraToGoal();};
+</script>
+</html>

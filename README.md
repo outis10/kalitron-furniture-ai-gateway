@@ -1,5 +1,7 @@
 # Kalitron Furniture AI Gateway
 
+E17 local Fusion/Blender visualization pilot: [current documentation](blender_worker/README.md).
+
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688?logo=fastapi)
 ![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python)
 ![SDXL](https://img.shields.io/badge/SDXL-1.0-orange)

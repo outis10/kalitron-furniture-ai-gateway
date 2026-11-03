@@ -126,3 +126,30 @@ Test configuration and precedence without Blender:
 ```powershell
 python -m unittest discover -s blender_worker/tests -p 'test_*.py' -v
 ```
+
+## Interactive 360 pilot
+
+Open a completed `presentacion.blend` in background mode and run
+`export_interactive.py -- --output <fresh-directory>`. Outputs `kitchen.glb`,
+`kitchen-no-walls.glb` and `export-report.json`. Only visible source bodies and
+accessories belonging to the same snapshot are included; the source blend is
+not saved. Reject scenes with multiple imported projects. Coordinates convert
+once from Blender Z-up meters to glTF Y-up meters. Preserve source extras.
+
+Use `check_interactive.py -- --glb <kitchen.glb>` with the same source blend to
+verify all visible source IDs, material assignments and world vertices after
+reimport (maximum coordinate error 0.01 mm). Report written beside the GLB.
+
+For a standalone local preview, copy `interactive-viewer.html` as `index.html`
+beside the GLBs and copy `@google/model-viewer@4.4.0/dist/model-viewer.min.js`
+and its LICENSE from Studio's installed dependency. Serve only that directory
+on 127.0.0.1 using Python http.server. No external CDN or geometry upload.
+Supports orbit, zoom, auto rotation, reset and wall variants. Browser lighting
+and procedural textures differ from the Cycles render; this remains illustrative.
+
+Studio's authenticated `/visualization-preview` route opens a selected local GLB
+without uploading it. Project storage and persisted result associations remain
+future integration work.
+
+Current validation, confirmed tags and pending hidden gola profiles: see
+[pilot-status.md](pilot-status.md). Source-hidden bodies stay hidden in the GLB.

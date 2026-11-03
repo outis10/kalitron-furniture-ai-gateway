@@ -58,9 +58,20 @@ def validate_config(config):
 
 
 def resolve_material(config, instance):
-    """Resolve operator-configured instance > definition > role > diagnostic fallback."""
-    for source,field in [('instance','instance_id'),('definition','definition_id'),('role','role')]:
+    """Resolve operator-configured instance > definition > explicit finish target > role > fallback."""
+    for source,field in [('instance','instance_id'),('definition','definition_id')]:
         assignments=config.get(source+'_assignments',{})
         if instance.get(field) in assignments:
             return assignments[instance[field]], source
+    # Explicit component metadata selects a palette family; role alone cannot.
+    target = instance.get('finish_target')
+    if target:
+        palette_role = {'DOOR': 'DOOR', 'CARCASS': 'CARCASS_SIDE', 'COUNTERTOP': 'COUNTERTOP'}.get(target)
+        material = config.get('role_assignments', {}).get(palette_role)
+        if material:
+            return material, 'finish_target'
+        return config['fallback_material'], 'diagnostic_fallback'
+    material = config.get('role_assignments', {}).get(instance.get('role'))
+    if material:
+        return material, 'role'
     return config['fallback_material'],'diagnostic_fallback'

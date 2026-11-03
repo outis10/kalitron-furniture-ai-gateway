@@ -50,3 +50,17 @@ first perspective 273.21 s, front 21.21 s, interior 24.09 s. The first-render
 preparation cost is not a production throughput benchmark. Illustrative palette
 remains unconfirmed; 196 imported source bodies and the known source omission are
 recorded, not corrected by rendering. 21 pure-Python worker/config tests pass.
+
+## Explicit filler palette binding
+
+Instances may carry optional `finish_target` DOOR or CARCASS, explicitly tagged
+by the operator using Filler_Door / Filler_Carcass in Fusion. Resolve after
+instance and definition overrides, before role assignments. DOOR selects the
+configured DOOR material; CARCASS selects CARCASS_SIDE. Unknown or unavailable
+targets use diagnostic fallback. No catalog SKU is inferred. Legacy manifests
+without this optional field retain their existing behavior.
+
+CounterTop_Fascia (including legacy Front_border) uses role COUNTERTOP_FASCIA
+and explicit finish_target COUNTERTOP, resolved via the COUNTERTOP palette
+assignment with the same override precedence. Fascias are not support surfaces
+for automatic decor placement.

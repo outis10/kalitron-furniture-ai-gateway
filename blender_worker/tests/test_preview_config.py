@@ -28,6 +28,25 @@ class PreviewConfigTests(unittest.TestCase):
         self.config['definition_assignments'].clear()
         self.assertEqual(config_module.resolve_material(self.config,instance),('WHITE_MATTE','role'))
 
+    def test_filler_palette_binding_and_overrides(self):
+        self.config['role_assignments']['DOOR']='BLACK_PROFILE'
+        instance={'instance_id':'i','definition_id':'d','role':'FILLER','finish_target':'DOOR'}
+        self.assertEqual(config_module.resolve_material(self.config,instance),('BLACK_PROFILE','finish_target'))
+        instance['finish_target']='CARCASS'
+        self.assertEqual(config_module.resolve_material(self.config,instance),('WHITE_MATTE','finish_target'))
+        self.config['definition_assignments']['d']='LIGHT_COUNTERTOP'
+        self.assertEqual(config_module.resolve_material(self.config,instance),('LIGHT_COUNTERTOP','definition'))
+        self.config['instance_assignments']['i']='BLACK_PROFILE'
+        self.assertEqual(config_module.resolve_material(self.config,instance),('BLACK_PROFILE','instance'))
+        self.config['definition_assignments'].clear()
+        self.config['instance_assignments'].clear()
+        self.config['role_assignments']['FILLER']='WHITE_MATTE'
+        instance['finish_target']='INVALID'
+        self.assertEqual(config_module.resolve_material(self.config,instance),('UNRESOLVED_NEUTRAL','diagnostic_fallback'))
+        instance['finish_target']='DOOR'
+        del self.config['role_assignments']['DOOR']
+        self.assertEqual(config_module.resolve_material(self.config,instance),('UNRESOLVED_NEUTRAL','diagnostic_fallback'))
+
     def test_unknown_role_is_reportable_fallback(self):
         self.assertEqual(config_module.resolve_material(self.config,{'role':'CUSTOM'}),
                          ('UNRESOLVED_NEUTRAL','diagnostic_fallback'))
