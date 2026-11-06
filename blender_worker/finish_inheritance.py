@@ -6,7 +6,7 @@ TARGET_FAMILIES = {'DOOR': 'FRONT', 'CARCASS': 'CARCASS', 'COUNTERTOP': 'COUNTER
 
 def validate_settings(settings, materials):
     if not isinstance(settings, dict) or set(settings) - {
-            'source_export_id', 'role_families', 'project', 'instances', 'definitions'}:
+            'source_export_id', 'role_families', 'project', 'instances', 'definitions', 'groups'}:
         raise ValueError('Unknown module_finishes fields')
     if not isinstance(settings.get('source_export_id'), str) or not settings['source_export_id']:
         raise ValueError('module_finishes requires source_export_id')
@@ -23,6 +23,17 @@ def validate_settings(settings, materials):
             raise ValueError('Invalid module family or material')
 
     slots(settings.get('project', {}))
+    groups = settings.get('groups', {})
+    if not isinstance(groups, dict) or set(groups) - {'LOWER', 'UPPER', 'BAR'}:
+        raise ValueError('Invalid module groups')
+    selected = set()
+    for members in groups.values():
+        if not isinstance(members, list):
+            raise ValueError('Module group must be a list')
+        for member in members:
+            if not isinstance(member, str) or not member or member in selected:
+                raise ValueError('Invalid or duplicate group member')
+            selected.add(member)
     for kind in ('instances', 'definitions'):
         assignments = settings.get(kind, {})
         if not isinstance(assignments, dict):
@@ -48,6 +59,9 @@ class ModuleFinishResolver:
                 raise ValueError('Duplicate instance ID: ' + key)
             self.instances[key] = instance
         definitions = {i['definition_id'] for i in self.instances.values()}
+        members = {m for group in self.settings.get('groups', {}).values() for m in group}
+        if members - set(self.instances):
+            raise ValueError('Unknown module group member')
         for key, valid in [('instances', self.instances), ('definitions', definitions)]:
             if set(self.settings.get(key, {})) - set(valid):
                 raise ValueError('Unknown module ' + key + ' selector')
