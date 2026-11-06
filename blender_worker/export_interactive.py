@@ -10,7 +10,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from render_preview import geometry_digest
 
 
-def export_interactive(output):
+def export_interactive(output, package=None, config=None):
+    if (package is None) != (config is None):
+        raise ValueError('package and config must be supplied together')
     output = Path(output)
     output.mkdir(parents=True, exist_ok=False)
     collections = [c for c in bpy.data.collections if c.get('kfs_export_id')]
@@ -49,6 +51,13 @@ def export_interactive(output):
                 export_cameras=False, export_lights=False, export_apply=False)
             if 'FINISHED' not in result:
                 raise RuntimeError('glTF export failed')
+            if package is not None:
+                from import_package import load_package
+                from editable_glb import attach_editor
+                data, _ = load_package(package)
+                if data['export_id'] != export_id:
+                    raise ValueError('Editor package does not match scene')
+                attach_editor(path, data, json.loads(Path(config).read_text(encoding='utf-8')))
             report['variants'].append({'file': path.name, 'mesh_objects': len(objects),
                                        'bytes': path.stat().st_size})
         report['source_geometry_unchanged'] = geometry_digest(source) == before
@@ -70,5 +79,7 @@ def export_interactive(output):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--output', required=True)
+    parser.add_argument('--package')
+    parser.add_argument('--config')
     args = parser.parse_args(sys.argv[sys.argv.index('--') + 1:])
-    export_interactive(args.output)
+    export_interactive(args.output, args.package, args.config)

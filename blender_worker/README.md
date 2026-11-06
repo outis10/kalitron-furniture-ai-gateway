@@ -207,3 +207,24 @@ Legacy configs need no changes. Test with `test_finish_inheritance.py`.
 Studio contract: `docs/specs/e17-model-based-visualization/module-finish-inheritance.md`
 in outis10/kalitron-furniture-studio. UI, project persistence and revision
 reconciliation remain follow-up parts of #186; no new API or LLM is introduced.
+
+## Editable Studio GLB
+
+For the local Studio finish controls, add explicit `module_finishes.groups`
+with LOWER/UPPER/BAR arrays of disjoint module instance IDs. Unknown/repeated
+members are rejected. Run export_interactive.py with paired `--package` and
+`--config` arguments in addition to `--output`; the package must match the scene.
+This embeds `asset.extras.kfs_finish_editor` in the GLBs: snapshot, full preview
+configuration, minimal instance hierarchy and labeled illustrative finishes.
+Geometry chunks remain unchanged. No paths, entity tokens or credentials are
+added. Ordinary exports without these arguments retain their previous behavior.
+
+Studio opens that single GLB locally. Changes to group fronts/interiors and
+piece exceptions update isolated materials immediately, without model reload or
+affecting other families. The downloaded selection JSON is directly accepted by
+render_preview.py with the original package/diagnostic blend. The downloaded GLB
+preserves the selection and source geometry. Backend jobs/storage are not added.
+
+Contract: Studio docs/specs/e17-model-based-visualization/studio-finish-controls.md.
+Validation includes metadata/geometry-byte tests and real browser-to-Python
+parity across all 191 visible bodies of the kitchen.
