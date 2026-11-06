@@ -9,7 +9,7 @@ import sys
 from time import perf_counter
 
 sys.path.insert(0,str(Path(__file__).resolve().parent))
-from preview_config import validate_config, resolve_material
+from preview_config import validate_config, resolve_material, build_module_resolver
 from import_package import load_package
 from decor_assets import build_decor
 
@@ -39,6 +39,7 @@ def render_preview(package, config_path, output):
     started=perf_counter()
     config=validate_config(json.loads(Path(config_path).read_text(encoding='utf-8')))
     data,_=load_package(package)
+    finish_resolver=build_module_resolver(config,data)
     output=Path(output)
     if output.exists():
         raise FileExistsError('Choose a fresh render output directory')
@@ -106,13 +107,20 @@ def render_preview(package, config_path, output):
             materials[name]=material
         for obj in objects:
             instance=instances[obj['kfs_instance_id']]
-            finish,source=resolve_material(config,instance)
+            if finish_resolver:
+                resolution=finish_resolver.resolve(instance)
+            else:
+                finish,source=resolve_material(config,instance)
+                resolution={'material':finish,'source':source,'family':None,'scope_id':None}
+            finish,source=resolution['material'],resolution['source']
             obj.data.materials.clear()
             obj.data.materials.append(materials[finish])
             obj['kfs_preview_finish']=finish
             obj['kfs_preview_assignment_source']=source
+            obj['kfs_preview_finish_family']=resolution['family'] or ''
+            obj['kfs_preview_finish_scope']=resolution['scope_id'] or ''
             report['material_assignments'].append({'instance_id':instance['instance_id'],
-                    'body_id':obj['kfs_body_id'],'material':finish,'source':source})
+                    'body_id':obj['kfs_body_id'],**resolution})
         report['fallback_body_count']=sum(a['source']=='diagnostic_fallback' for a in report['material_assignments'])
         report['decor']=build_decor(config.get('decor',[]),objects,data['export_id'])
         visible=[o for o in objects if not o.hide_render]

@@ -166,3 +166,44 @@ not source furniture or a camera distortion. The GLB already omitted the cube.
 
 Operator accepted the corrected corner on 2026-11-05. Current validation and
 remaining scope: [pilot-acceptance.md](pilot-acceptance.md).
+
+## Module finishes (#186, deterministic local slice)
+
+Optional `module_finishes` in the preview configuration selects FRONT, CARCASS,
+GOLA, PLINTH and COUNTERTOP families per module instance/definition. Group
+membership is an explicit selection of IDs from the matching manifest, never
+inferred from names, height or role. Containers can have no bodies. Example
+fragment (merge into an existing valid preview config using its material keys):
+
+```json
+{
+  "module_finishes": {
+    "source_export_id": "COPY_THE_MATCHING_EXPORT_ID",
+    "role_families": {"DOOR": "FRONT", "COVER_PANEL": "FRONT", "CARCASS_SIDE": "CARCASS"},
+    "project": {"CARCASS": "WHITE_MATTE"},
+    "instances": {
+      "SELECTED_LOWER_MODULE_ID": {"FRONT": "BLACK_PROFILE"},
+      "SELECTED_UPPER_MODULE_ID": {"FRONT": "WHITE_MATTE"}
+    },
+    "definitions": {}
+  }
+}
+```
+
+Existing piece instance/definition overrides win. Then traverse the closest
+module outward, preferring instance slots to definition slots at each level;
+then use project family defaults and existing global preview assignments.
+`finish_target=DOOR` selects FRONT, while CARCASS and COUNTERTOP keep their
+families. Explicit target selection wins over the configured role-family map.
+Removing a piece override restores inheritance. Materials are still illustrative
+preview-library entries; this is not commercial catalog finish_id resolution.
+
+Wrong export IDs, unknown selectors/materials/families and invalid hierarchies
+fail before Blender scene changes. Do not copy snapshot selectors into a new
+export. Resolution provenance (family, source, scope_id) is recorded for each
+body and in object extras; GLB uses the same assigned materials as PNG.
+Legacy configs need no changes. Test with `test_finish_inheritance.py`.
+
+Studio contract: `docs/specs/e17-model-based-visualization/module-finish-inheritance.md`
+in outis10/kalitron-furniture-studio. UI, project persistence and revision
+reconciliation remain follow-up parts of #186; no new API or LLM is introduced.

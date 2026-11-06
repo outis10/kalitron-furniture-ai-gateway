@@ -7,6 +7,15 @@ completion of the full MVP, stable identity contract, catalog or agent.
 
 ## Behavior
 
+Issue Studio #186 adds optional snapshot-bound module_finishes configuration.
+Piece occurrence/definition preview overrides win, then per-family nearest
+module instance/definition defaults, project-family defaults and legacy global
+assignments. Explicit finish targets select their family. Validate materials,
+selectors, source export and hierarchy before scene changes. Keep source roles,
+geometry and transforms; record winning family/source/scope in reports and
+object extras. PNG and GLB share the same resolved materials. See Studio's
+module-finish-inheritance.md for the reviewed local-slice contract.
+
 Render in a dedicated presentation scene that links only the matching imported
 project collection and worker-owned setup/accessories. Retain the original scene
 and its unrelated objects (including Blender's startup cube) without including
