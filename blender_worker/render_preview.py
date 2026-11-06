@@ -68,8 +68,26 @@ def render_preview(package, config_path, output):
     def write_report():
         (output/'render-report.json').write_text(json.dumps(report,indent=2,ensure_ascii=False),encoding='utf-8')
 
+    original_scene=bpy.context.scene
     write_report()
     try:
+        # The imported scene may retain Blender's startup cube or unrelated
+        # geometry/lights. Render only the imported project and owned staging.
+        # Preserve the original scene instead of deleting objects by name.
+        source_collections=[c for c in bpy.data.collections
+                            if c.get('kfs_export_id')==data['export_id']]
+        if len(source_collections)!=1:
+            raise ValueError('Expected one source collection for this export')
+        presentation=bpy.data.scenes.new('KFS presentation')
+        presentation.world=bpy.data.worlds.new('KFS presentation world')
+        presentation.unit_settings.system='METRIC'
+        presentation.unit_settings.scale_length=1.0
+        presentation.collection.children.link(source_collections[0])
+        bpy.context.window.scene=presentation
+        report['presentation_scene']=presentation.name
+        source_objects=set(source_collections[0].all_objects)
+        report['excluded_scene_objects']=[o.name for o in original_scene.objects
+                                          if o not in source_objects]
         owned=bpy.data.collections.new('KFS preview setup')
         bpy.context.scene.collection.children.link(owned)
         owned['kfs_preview_export_id']=data['export_id']
@@ -136,6 +154,13 @@ def render_preview(package, config_path, output):
         camera_data.lens=config['camera']['lens_mm']
         camera_data.clip_end=1000
         scene.camera=camera
+        allowed=set(objects)|set(owned.all_objects)
+        for collection in bpy.data.collections:
+            if collection.get('kfs_decor_export_id')==data['export_id']:
+                allowed.update(collection.all_objects)
+        if set(scene.objects)!=allowed:
+            raise RuntimeError('Presentation scene contains unexpected objects')
+        report['scene_ownership_verified']=True
         scene.render.engine='CYCLES'
         scene.cycles.samples=config['render']['samples']
         scene.cycles.use_denoising=True
@@ -230,6 +255,7 @@ def render_preview(package, config_path, output):
             obj.hide_render,obj.hide_viewport=original_visibility[obj.name]
         report.update(status='FAILED',error=str(error),final_ready=False)
         write_report()
+        bpy.context.window.scene=original_scene
         raise
 
 

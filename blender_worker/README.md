@@ -153,3 +153,16 @@ future integration work.
 
 Current validation, confirmed tags and pending hidden gola profiles: see
 [pilot-status.md](pilot-status.md). Source-hidden bodies stay hidden in the GLB.
+
+The renderer creates a dedicated presentation scene, linking only the matching
+source collection and owned setup/accessories. It retains the original scene
+without rendering its startup cube, camera, lights or other unrelated objects.
+The saved blend opens in the isolated scene. `excluded_scene_objects` and
+`scene_ownership_verified` in the render report make this explicit.
+Run `check_presentation_scene.py -- --report <path.json>` on that saved blend
+to verify the active scene contains only owned objects. This fixes the white
+block previously obscuring the kitchen corner: it was Blender's startup Cube,
+not source furniture or a camera distortion. The GLB already omitted the cube.
+
+Operator accepted the corrected corner on 2026-11-05. Current validation and
+remaining scope: [pilot-acceptance.md](pilot-acceptance.md).

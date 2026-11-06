@@ -7,6 +7,12 @@ completion of the full MVP, stable identity contract, catalog or agent.
 
 ## Behavior
 
+Render in a dedicated presentation scene that links only the matching imported
+project collection and worker-owned setup/accessories. Retain the original scene
+and its unrelated objects (including Blender's startup cube) without including
+them in the rendered scene. Record excluded objects and verify scene ownership
+before rendering. Save the presentation scene active in the result blend.
+
 A versioned Blender CLI reads an imported .blend, the matching export manifest
 and explicit JSON presentation configuration. Produce PNG previews and a reusable
 .blend in a fresh output directory. Rendering runs outside FastAPI. No LLM needed.
