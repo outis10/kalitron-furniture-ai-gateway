@@ -1,0 +1,27 @@
+{
+  "schema_version": "kfs-preview/0.1",
+  "label": "Propuesta ilustrativa: blanco mate, encimera clara y gola negro. Acabados sin confirmar.",
+  "illustrative": true,
+  "materials": {
+    "WHITE_MATTE": {"color": [0.82, 0.80, 0.76], "roughness": 0.36},
+    "LIGHT_COUNTERTOP": {"color": [0.72, 0.70, 0.66], "roughness": 0.22},
+    "BLACK_PROFILE": {"color": [0.018, 0.021, 0.024], "roughness": 0.27, "metallic": 0.65},
+    "WALL_WARM_WHITE": {"color": [0.74, 0.72, 0.68], "roughness": 0.8},
+    "FLOOR_NEUTRAL": {"color": [0.28, 0.26, 0.23], "roughness": 0.58},
+    "UNRESOLVED_NEUTRAL": {"color": [0.48, 0.48, 0.48], "roughness": 0.65}
+  },
+  "role_assignments": {
+    "CARCASS_SIDE": "WHITE_MATTE", "CARCASS_TOP": "WHITE_MATTE",
+    "CARCASS_BOTTOM": "WHITE_MATTE", "CARCASS_NAILER": "WHITE_MATTE",
+    "BACK_PANEL": "WHITE_MATTE", "SHELF": "WHITE_MATTE",
+    "DOOR": "WHITE_MATTE", "DRAWER_FRONT": "WHITE_MATTE", "COVER_PANEL": "WHITE_MATTE",
+    "DRAWER_SIDE": "WHITE_MATTE", "DRAWER_BACK": "WHITE_MATTE", "DRAWER_BOTTOM": "WHITE_MATTE",
+    "PLINTH": "WHITE_MATTE", "COUNTERTOP": "LIGHT_COUNTERTOP",
+    "GOLA_PROFILE": "BLACK_PROFILE", "WALL": "WALL_WARM_WHITE"
+  },
+  "definition_assignments": {}, "instance_assignments": {},
+  "fallback_material": "UNRESOLVED_NEUTRAL", "floor_material": "FLOOR_NEUTRAL",
+  "render": {"width": 1280, "height": 960, "samples": 32, "seed": 17},
+  "camera": {"eye_height_m": 1.7, "target_height_m": 1.2, "lens_mm": 42},
+  "lighting": {"world_strength": 0.3, "key_watts": 1100, "fill_watts": 650, "top_watts": 700}
+}

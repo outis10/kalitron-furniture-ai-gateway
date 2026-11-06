@@ -1,0 +1,528 @@
+{
+  "schema_version": "kfs-render/1.0",
+  "profile": "diagnostic-pilot/0.1",
+  "project_id": "project-A",
+  "source_revision": {
+    "state": "saved",
+    "snapshot_id": "7a68bccb8ed34dc49f9fbdf883796010",
+    "data_file_id": "project-A",
+    "version": 7
+  },
+  "export_id": "7a68bccb8ed34dc49f9fbdf883796010",
+  "timestamp": "2026-10-29T03:31:00.604899+00:00",
+  "exporter_version": "0.1.0",
+  "fusion_version": "mock-fixture",
+  "coordinates": {
+    "units": "mm",
+    "handedness": "right",
+    "up_axis": "Z",
+    "source_api_units": "cm",
+    "source_to_package_axes": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "matrix_layout": "row-major",
+    "vector_convention": "column"
+  },
+  "tessellation_tolerance_mm": 0.5,
+  "components": [
+    {
+      "definition_id": "d_823785beba45416e908df81b47a17362",
+      "display_name": "Kitchen",
+      "role": "WALL",
+      "part_group": null,
+      "finish_id": null,
+      "grain_axis": null,
+      "geometry_refs": [
+        {
+          "local_bounds_mm": {
+            "min": [
+              0,
+              0,
+              0
+            ],
+            "max": [
+              600,
+              400,
+              18.0
+            ]
+          },
+          "sha256": "d0a2787dfb9cbfea23f62414bdea933f78f648e063e2016668a9195f2d175cca",
+          "vertex_count": 4,
+          "triangle_count": 4,
+          "body_id": "b_6359257d0d5b4c7786f7619e1a0a6a62",
+          "path": "geometry/b_6359257d0d5b4c7786f7619e1a0a6a62.obj",
+          "display_name": "Root wall",
+          "source_local_bounds_mm": {
+            "min": [
+              0,
+              0,
+              0
+            ],
+            "max": [
+              600,
+              400,
+              18.0
+            ]
+          }
+        }
+      ],
+      "local_bounds_mm": {
+        "min": [
+          0,
+          0,
+          0
+        ],
+        "max": [
+          600,
+          400,
+          18.0
+        ]
+      },
+      "source_local_bounds_mm": {
+        "min": [
+          0,
+          0,
+          0
+        ],
+        "max": [
+          600,
+          400,
+          18.0
+        ]
+      }
+    },
+    {
+      "definition_id": "d_66dfdf55698f437ba3b69d1bcaea38a7",
+      "display_name": "Door",
+      "role": "DOOR",
+      "part_group": null,
+      "finish_id": null,
+      "grain_axis": "X",
+      "geometry_refs": [
+        {
+          "local_bounds_mm": {
+            "min": [
+              0,
+              0,
+              0
+            ],
+            "max": [
+              600,
+              400,
+              18.0
+            ]
+          },
+          "sha256": "9d6da13bc82ce069c1c63f1d94a575bc00e70c7e975f7ea65dfab4934ac8890a",
+          "vertex_count": 4,
+          "triangle_count": 4,
+          "body_id": "b_9335ca8240cf400db5ba9e37ad8d59c9",
+          "path": "geometry/b_9335ca8240cf400db5ba9e37ad8d59c9.obj",
+          "display_name": "Panel",
+          "source_local_bounds_mm": {
+            "min": [
+              0,
+              0,
+              0
+            ],
+            "max": [
+              600,
+              400,
+              18.0
+            ]
+          }
+        },
+        {
+          "local_bounds_mm": {
+            "min": [
+              0,
+              0,
+              0
+            ],
+            "max": [
+              600,
+              400,
+              18.0
+            ]
+          },
+          "sha256": "c00937a7e26d7426a6646974e8827f6fc895f16a2fbd5587159b99c022f7bd03",
+          "vertex_count": 4,
+          "triangle_count": 4,
+          "body_id": "b_c43815d84b124720b6f3ec79d23c2c5a",
+          "path": "geometry/b_c43815d84b124720b6f3ec79d23c2c5a.obj",
+          "display_name": "Second",
+          "source_local_bounds_mm": {
+            "min": [
+              0,
+              0,
+              0
+            ],
+            "max": [
+              600,
+              400,
+              18.0
+            ]
+          }
+        }
+      ],
+      "local_bounds_mm": {
+        "min": [
+          0,
+          0,
+          0
+        ],
+        "max": [
+          600,
+          400,
+          18.0
+        ]
+      },
+      "source_local_bounds_mm": {
+        "min": [
+          0,
+          0,
+          0
+        ],
+        "max": [
+          600,
+          400,
+          18.0
+        ]
+      }
+    },
+    {
+      "definition_id": "d_5f6a1d5228fa4073a448e4efe7dbcdca",
+      "display_name": "Cabinet",
+      "role": null,
+      "part_group": null,
+      "finish_id": "WALNUT",
+      "grain_axis": null,
+      "geometry_refs": []
+    }
+  ],
+  "instances": [
+    {
+      "instance_id": "i_ba0c438a340e468aa2ced441e397d3b9",
+      "definition_id": "d_823785beba45416e908df81b47a17362",
+      "parent_instance_id": null,
+      "display_name": "Kitchen",
+      "role": "WALL",
+      "geometry_refs": [
+        "geometry/b_6359257d0d5b4c7786f7619e1a0a6a62.obj"
+      ],
+      "local_to_world_mm": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "local_bounds_mm": {
+        "min": [
+          0,
+          0,
+          0
+        ],
+        "max": [
+          600,
+          400,
+          18.0
+        ]
+      },
+      "world_bounds_mm": {
+        "min": [
+          0,
+          0,
+          0
+        ],
+        "max": [
+          600,
+          400,
+          18.0
+        ]
+      },
+      "effective_finish_id": null,
+      "finish_source": null,
+      "grain_axis": null,
+      "source_visibility": true,
+      "render_enabled": true,
+      "body_visibility": {
+        "geometry/b_6359257d0d5b4c7786f7619e1a0a6a62.obj": true
+      },
+      "source_world_bounds_mm": {
+        "min": [
+          0,
+          0,
+          0
+        ],
+        "max": [
+          600,
+          400,
+          18.0
+        ]
+      }
+    },
+    {
+      "instance_id": "i_23d02473928c487d98ee9c9792c54f4c",
+      "definition_id": "d_66dfdf55698f437ba3b69d1bcaea38a7",
+      "parent_instance_id": "i_ba0c438a340e468aa2ced441e397d3b9",
+      "display_name": "Kitchen+Door direct",
+      "role": "DOOR",
+      "geometry_refs": [
+        "geometry/b_9335ca8240cf400db5ba9e37ad8d59c9.obj",
+        "geometry/b_c43815d84b124720b6f3ec79d23c2c5a.obj"
+      ],
+      "local_to_world_mm": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "local_bounds_mm": {
+        "min": [
+          0,
+          0,
+          0
+        ],
+        "max": [
+          600,
+          400,
+          18.0
+        ]
+      },
+      "world_bounds_mm": {
+        "min": [
+          0,
+          0,
+          0
+        ],
+        "max": [
+          600,
+          400,
+          18.0
+        ]
+      },
+      "effective_finish_id": null,
+      "finish_source": null,
+      "grain_axis": "X",
+      "source_visibility": true,
+      "render_enabled": true,
+      "body_visibility": {
+        "geometry/b_9335ca8240cf400db5ba9e37ad8d59c9.obj": true,
+        "geometry/b_c43815d84b124720b6f3ec79d23c2c5a.obj": false
+      },
+      "source_world_bounds_mm": {
+        "min": [
+          0,
+          0,
+          0
+        ],
+        "max": [
+          600,
+          400,
+          18.0
+        ]
+      }
+    },
+    {
+      "instance_id": "i_e2da3f1258fd4b26b9b3b44232b46f31",
+      "definition_id": "d_5f6a1d5228fa4073a448e4efe7dbcdca",
+      "parent_instance_id": "i_ba0c438a340e468aa2ced441e397d3b9",
+      "display_name": "Kitchen+Cabinet:1",
+      "role": null,
+      "geometry_refs": [],
+      "local_to_world_mm": [
+        0,
+        -1,
+        0,
+        1000,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "local_bounds_mm": null,
+      "world_bounds_mm": null,
+      "effective_finish_id": "WALNUT",
+      "finish_source": "i_e2da3f1258fd4b26b9b3b44232b46f31",
+      "grain_axis": null,
+      "source_visibility": false,
+      "render_enabled": false,
+      "body_visibility": {},
+      "source_world_bounds_mm": null
+    },
+    {
+      "instance_id": "i_6b0af43e2cf242029c0cbeee9c195213",
+      "definition_id": "d_66dfdf55698f437ba3b69d1bcaea38a7",
+      "parent_instance_id": "i_e2da3f1258fd4b26b9b3b44232b46f31",
+      "display_name": "Kitchen+Cabinet:1+Door mirrored",
+      "role": "DOOR",
+      "geometry_refs": [
+        "geometry/b_9335ca8240cf400db5ba9e37ad8d59c9.obj",
+        "geometry/b_c43815d84b124720b6f3ec79d23c2c5a.obj"
+      ],
+      "local_to_world_mm": [
+        0,
+        -1,
+        0,
+        1000,
+        -1,
+        0,
+        0,
+        200,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "local_bounds_mm": {
+        "min": [
+          0,
+          0,
+          0
+        ],
+        "max": [
+          600,
+          400,
+          18.0
+        ]
+      },
+      "world_bounds_mm": {
+        "min": [
+          600,
+          -400,
+          0
+        ],
+        "max": [
+          1000,
+          200,
+          18.0
+        ]
+      },
+      "effective_finish_id": "WALNUT",
+      "finish_source": "i_e2da3f1258fd4b26b9b3b44232b46f31",
+      "grain_axis": "X",
+      "source_visibility": false,
+      "render_enabled": false,
+      "body_visibility": {
+        "geometry/b_9335ca8240cf400db5ba9e37ad8d59c9.obj": false,
+        "geometry/b_c43815d84b124720b6f3ec79d23c2c5a.obj": false
+      },
+      "source_world_bounds_mm": {
+        "min": [
+          600,
+          -400,
+          0
+        ],
+        "max": [
+          1000,
+          200,
+          18.0
+        ]
+      }
+    }
+  ],
+  "resources": [],
+  "world_bounds_mm": {
+    "min": [
+      0,
+      -400,
+      0
+    ],
+    "max": [
+      1000,
+      400,
+      18.0
+    ]
+  },
+  "validation": {
+    "status": "DIAGNOSTIC",
+    "final_ready": false,
+    "issues": [
+      {
+        "code": "SNAPSHOT_IDENTITY",
+        "subject": "package",
+        "message": "IDs apply only to this export; persistent registry not implemented."
+      },
+      {
+        "code": "ORIENTATION_REVIEW",
+        "subject": "package",
+        "message": "Source axes preserved with Z up; verify against actual design."
+      },
+      {
+        "code": "FINISH_RESOLUTION_PENDING",
+        "subject": "package",
+        "message": "Catalog, instance overrides and grain validation require review."
+      },
+      {
+        "code": "MISSING_FINISH",
+        "subject": "i_ba0c438a340e468aa2ced441e397d3b9",
+        "message": "Diagnostic neutral placeholder only."
+      },
+      {
+        "code": "UNRESOLVED_GRAIN",
+        "subject": "i_ba0c438a340e468aa2ced441e397d3b9",
+        "message": "Local grain axis not validated."
+      },
+      {
+        "code": "MULTIBODY_REVIEW",
+        "subject": "Door",
+        "message": "Verify all bodies belong to one physical piece."
+      },
+      {
+        "code": "MISSING_FINISH",
+        "subject": "i_23d02473928c487d98ee9c9792c54f4c",
+        "message": "Diagnostic neutral placeholder only."
+      }
+    ]
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "schema_version": "kfs-preview/0.1",
+  "label": "Paleta solicitada: puertas/covers menta, gola/toe negro mate, encimera blanca, interiores blanco mate y paredes perla beige. Tono menta y brillo aproximados para revision; sin equivalencia comercial confirmada.",
+  "illustrative": true,
+  "materials": {
+    "MINT_PREVIEW": {"color": [0.3968, 0.6584, 0.5089], "roughness": 0.42, "metallic": 0.0},
+    "WHITE_INTERIOR_MATTE": {"color": [0.8388, 0.8469, 0.8228], "roughness": 0.58},
+    "WHITE_COUNTERTOP": {"color": [0.8714, 0.8796, 0.8550], "roughness": 0.28},
+    "BLACK_MATTE": {"color": [0.0060, 0.0065, 0.0070], "roughness": 0.62, "metallic": 0.0},
+    "PEARL_BEIGE_WALL": {"color": [0.7913, 0.7305, 0.6308], "roughness": 0.85},
+    "FLOOR_NEUTRAL": {"color": [0.28, 0.26, 0.23], "roughness": 0.58},
+    "UNRESOLVED_NEUTRAL": {"color": [0.48, 0.48, 0.48], "roughness": 0.65}
+  },
+  "role_assignments": {
+    "CARCASS_SIDE": "WHITE_INTERIOR_MATTE", "CARCASS_TOP": "WHITE_INTERIOR_MATTE",
+    "CARCASS_BOTTOM": "WHITE_INTERIOR_MATTE", "CARCASS_NAILER": "WHITE_INTERIOR_MATTE",
+    "BACK_PANEL": "WHITE_INTERIOR_MATTE", "SHELF": "WHITE_INTERIOR_MATTE",
+    "SHELF_FIXED": "WHITE_INTERIOR_MATTE", "SHELF_STIFFENER": "WHITE_INTERIOR_MATTE",
+    "DIVIDER": "WHITE_INTERIOR_MATTE", "BAR_FRAME_MEMBER": "WHITE_INTERIOR_MATTE",
+    "DOOR": "MINT_PREVIEW", "DRAWER_FRONT": "MINT_PREVIEW", "COVER_PANEL": "MINT_PREVIEW",
+    "DRAWER_SIDE": "WHITE_INTERIOR_MATTE", "DRAWER_BACK": "WHITE_INTERIOR_MATTE",
+    "DRAWER_BOTTOM": "WHITE_INTERIOR_MATTE", "DRAWER_SUBFRONT": "WHITE_INTERIOR_MATTE",
+    "PLINTH": "BLACK_MATTE", "COUNTERTOP": "WHITE_COUNTERTOP",
+    "GOLA_PROFILE": "BLACK_MATTE", "WALL": "PEARL_BEIGE_WALL"
+  },
+  "definition_assignments": {}, "instance_assignments": {},
+  "fallback_material": "UNRESOLVED_NEUTRAL", "floor_material": "FLOOR_NEUTRAL",
+  "render": {"width": 1280, "height": 960, "samples": 48, "seed": 17},
+  "camera": {"eye_height_m": 1.7, "target_height_m": 1.2, "lens_mm": 42},
+  "lighting": {"world_strength": 0.18, "key_watts": 650, "fill_watts": 220, "top_watts": 350}
+}
