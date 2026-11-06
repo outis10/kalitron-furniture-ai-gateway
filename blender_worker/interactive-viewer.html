@@ -16,7 +16,7 @@ footer{padding:12px 28px;background:#fff;font-size:14px;display:flex;justify-con
 </style>
 <header><div><h1>Tu cocina, desde todos los ángulos</h1><p>Arrastra para girar · Rueda para acercar · Dos dedos para mover en pantalla táctil</p></div>
 <div class="controls"><button id="rotate" aria-pressed="false" disabled>Girar automáticamente</button><button id="walls" aria-pressed="true" disabled>Paredes visibles</button><button id="reset" disabled>Restablecer vista</button></div></header>
-<model-viewer id="viewer" src="kitchen.glb" alt="Cocina KFS con puertas verde olivo y encimeras blancas"
+<model-viewer id="viewer" src="kitchen.glb" alt="Cocina KFS exportada desde Fusion con los acabados seleccionados"
 camera-controls touch-action="pan-y" camera-orbit="42deg 70deg 7.5m" min-camera-orbit="auto 8deg 0.4m"
 max-camera-orbit="auto 88deg 16m" shadow-intensity="0.7" shadow-softness="0.8" exposure="1"
 interaction-prompt="auto" auto-rotate-delay="1000" rotation-per-second="12deg" loading="eager"></model-viewer>
@@ -30,7 +30,7 @@ let showWalls=true, savedCamera=null;
 viewer.addEventListener('progress',e=>{if(!viewer.loaded)status.textContent=`Cargando modelo… ${Math.round(e.detail.totalProgress*100)} %`;});
 viewer.addEventListener('load',()=>{
   if(savedCamera){viewer.cameraOrbit=savedCamera.orbit;viewer.cameraTarget=savedCamera.target;savedCamera=null;viewer.jumpCameraToGoal();}
-  status.textContent='Listo · Gira la cocina para revisar el filler y los faldones';
+  status.textContent='Listo · Gira la cocina para revisar los muebles y sus acabados';
   [rotate,walls,reset].forEach(b=>b.disabled=false);
 });
 viewer.addEventListener('error',()=>{status.textContent='No se pudo cargar el modelo. Recarga la página para reintentar.';});

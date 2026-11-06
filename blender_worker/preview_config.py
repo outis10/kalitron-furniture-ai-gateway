@@ -7,12 +7,16 @@ _decor_spec=importlib.util.spec_from_file_location('kfs_decor_config',Path(__fil
 _decor_module=importlib.util.module_from_spec(_decor_spec)
 _decor_spec.loader.exec_module(_decor_module)
 
+_finish_spec=importlib.util.spec_from_file_location('kfs_finish_inheritance',Path(__file__).with_name('finish_inheritance.py'))
+_finish_module=importlib.util.module_from_spec(_finish_spec)
+_finish_spec.loader.exec_module(_finish_module)
+
 
 def validate_config(config):
     """Validate the small preview contract before any Blender scene changes."""
     allowed={'schema_version','label','illustrative','materials','role_assignments',
              'definition_assignments','instance_assignments','fallback_material',
-             'floor_material','render','camera','lighting','decor'}
+             'floor_material','render','camera','lighting','decor','module_finishes'}
     if set(config)-allowed or config.get('schema_version')!='kfs-preview/0.1' or config.get('illustrative') is not True:
         raise ValueError('Unknown keys/profile or missing illustrative=true')
     materials=config['materials']
@@ -54,7 +58,16 @@ def validate_config(config):
         if not math.isfinite(value) or not 0<=value<=(5 if key=='world_strength' else 5000):
             raise ValueError('Invalid lighting '+key)
     _decor_module.validate_decor(config.get('decor',[]))
+    if 'module_finishes' in config:
+        _finish_module.validate_settings(config['module_finishes'],materials)
     return config
+
+
+def build_module_resolver(config, package):
+    """Validate snapshot and hierarchy before any Blender changes."""
+    if 'module_finishes' not in config:
+        return None
+    return _finish_module.ModuleFinishResolver(config,package,resolve_material)
 
 
 def resolve_material(config, instance):
